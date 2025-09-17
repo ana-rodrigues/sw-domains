@@ -1,1 +1,73 @@
-console.log('Background script loaded');
+// Background script for Safe Web Domains
+
+console.log('[SW-Domains] Background script loaded');
+
+
+/**
+ * Update extension icon based on risk status
+ * @param {number} tabId - ID of the tab
+ * @param {string} status - Risk status: 'legitimate', 'suspicious', 'unknown'
+ */
+function updateExtensionIcon(tabId, status) {
+  // Define default icon path once
+  const defaultIconPath = {
+    "16": "icons/icon-default-16.png",
+    "32": "icons/icon-default-32.png", 
+    "48": "icons/icon-default-48.png",
+    "128": "icons/icon-default-128.png"
+  };
+  
+  let iconPath;
+  
+  switch (status) {
+    case 'legitimate':
+      iconPath = {
+        "16": "icons/icon-legitimate-16.png",
+        "32": "icons/icon-legitimate-32.png",
+        "48": "icons/icon-legitimate-48.png",
+        "128": "icons/icon-legitimate-128.png"
+      };
+      break;
+    case 'suspicious':
+      iconPath = {
+        "16": "icons/icon-suspicious-16.png",
+        "32": "icons/icon-suspicious-32.png",
+        "48": "icons/icon-suspicious-48.png",
+        "128": "icons/icon-suspicious-128.png"
+      };
+      break;
+    case 'unknown':
+    default:
+      iconPath = defaultIconPath;
+      break;
+  }
+  
+  chrome.action.setIcon({
+    tabId: tabId,
+    path: iconPath
+  });
+  
+  console.log(`[SW-Domains] Icon updated for tab ${tabId}: ${status}`);
+}
+
+
+// Event listeners
+
+/**
+ * Listen for icon update requests from content scripts
+ */
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'updateIcon' && sender.tab) {
+    console.log('[SW-Domains] Received icon update request:', message.status);
+    updateExtensionIcon(sender.tab.id, message.status);
+  }
+});
+
+/**
+ * Reset icon to default when user navigates to new page
+ */
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'loading') {
+    updateExtensionIcon(tabId, 'unknown');
+  }
+});

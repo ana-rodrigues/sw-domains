@@ -129,18 +129,27 @@ function createWarningMessage(result) {
 }
 
 /**
- * Store verification result for popup access
+ * Store verification result for popup access and update extension icon
  * @param {object} result - Verification result
  */
 function storeVerificationResult(result) {
   try {
     if (typeof chrome !== 'undefined' && chrome.storage) {
+      // Store data for popup
       chrome.storage.local.set({
         'sw-domains-current-result': result
       });
+      
+      // Send message to background script to update icon
+      chrome.runtime.sendMessage({
+        type: 'updateIcon',
+        status: result.status
+      });
+      
+      console.log(`[SW-Domains] Stored result and updated icon: ${result.status}`);
     }
   } catch (error) {
-    console.error('[SW-Domains] Failed to store result:', error);
+    console.error('[SW-Domains] Failed to store result or update icon:', error);
   }
 }
 
