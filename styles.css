@@ -1,0 +1,73 @@
+/* Global CSS */
+
+:root {
+
+/* Colors */
+ --primary-text-color: #000000;
+ --secondary-text-color: #424242;
+ --tertiary-text-color: #727272;
+
+ --primary-background-color: #ffffff;
+ --secondary-background-color: #f5f5f5;
+ --tertiary-background-color: #e0e0e0;
+
+/* Radii */
+ --base-radius: 8px;
+ --radius-xs: calc(var(--base-radius) / 4);
+ --radius-sm: calc(var(--base-radius) / 2);
+ --radius-md: var(--base-radius);
+ --radius-lg: calc(var(--base-radius) * 2);
+ --radius-xl: calc(var(--base-radius) * 4);
+
+/* Spacing */
+ --base-spacing: 8px;
+ --spacing-xs: calc(var(--base-spacing) / 4);
+ --spacing-sm: calc(var(--base-spacing) / 2);
+ --spacing-md: var(--base-spacing);
+ --spacing-lg: calc(var(--base-spacing) * 2);
+ --spacing-xl: calc(var(--base-spacing) * 4);
+
+/* Font */
+ --base-font-size: 14px;
+ --font-size-xs: calc(var(--base-font-size) / 2);
+ --font-size-sm: var(--base-font-size);
+ --font-size-md: calc(var(--base-font-size) * 2);
+ --font-size-lg: calc(var(--base-font-size) * 4);
+ --font-size-xl: calc(var(--base-font-size) * 8);
+
+--font-weight-normal: 400;
+--font-weight-semibold: 600;
+
+--letter-spacing-tight: calc(var(--base-font-size) / 100);
+--letter-spacing-normal: calc(var(--base-font-size) / 50);
+--letter-spacing-wide: calc(var(--base-font-size) / 10);
+
+--line-height-tight: calc(var(--base-font-size) / 2);
+--line-height-normal: calc(var(--base-font-size) / 1.25);
+--line-height-wide: calc(var(--base-font-size) / 0.75);
+}
+
+
+/* Components */
+
+body {
+    width: 250px;
+    padding: var(--spacing-md);
+    font-family: sans-serif;
+  }
+  
+  #riskDisplay {
+    text-align: center;
+  }
+
+
+/* Risk level UI rendering */
+
+.unknown {   
+}
+
+.legitimate {   
+}
+
+.suspicious {   
+}
