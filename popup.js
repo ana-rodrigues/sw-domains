@@ -45,9 +45,9 @@ function loadDomainRisk() {
         console.log('[SW-Domains] Storage result:', result);
         
         if (result['sw-domains-current-result']) {
-          displayRiskStatus(result['sw-domains-current-result']);
+          displayRiskStatus(result['sw-domains-current-result'], domain);
         } else {
-          displayUnknownRisk();
+          displayUnknownRisk(domain);
         }
       });
     }
@@ -120,7 +120,7 @@ function showLegitimateRisk(result, domain) {
  * Display suspicious domain warning
  * @param {object} result - Analysis result with detection details
  */
-function showSuspiciousRisk(result) {
+function showSuspiciousRisk(result, domain) {
   riskDisplay.className = 'suspicious';
   
   if (result.detectionResult && result.detectionResult.bankName) {
