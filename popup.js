@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Load and display a domain risk status
  */
-
 function loadDomainRisk() {
   console.log('[SW-Domains] Loading domain risk');
 
@@ -40,12 +39,13 @@ function loadDomainRisk() {
       const domain = cleanDomain(url.hostname);
       console.log('[SW-Domains] Current domain:', domain);
       
-      // Get stored domain analysis (sw-domains-current-result) from content.js
-      chrome.storage.local.get(['sw-domains-current-result'], function(result) {
+      // Get stored domain analysis using per-tab storage key
+      chrome.storage.local.get([`sw-domains-result-${currentTab.id}`], function(result) {
         console.log('[SW-Domains] Storage result:', result);
         
-        if (result['sw-domains-current-result']) {
-          displayRiskStatus(result['sw-domains-current-result'], domain);
+        const tabResult = result[`sw-domains-result-${currentTab.id}`];
+        if (tabResult) {
+          displayRiskStatus(tabResult, domain);
         } else {
           displayUnknownRisk(domain);
         }

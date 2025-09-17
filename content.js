@@ -88,6 +88,10 @@ function performFraudDetection() {
           timestamp: Date.now()
         });
         
+        chrome.runtime.sendMessage({
+          type: 'openPopup'
+        });
+        
         // Create warning message
         const message = createWarningMessage(result);
         
@@ -134,10 +138,11 @@ function createWarningMessage(result) {
  */
 function storeVerificationResult(result) {
   try {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      // Store data for popup
-      chrome.storage.local.set({
-        'sw-domains-current-result': result
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      // Send result to background script for per-tab storage
+      chrome.runtime.sendMessage({
+        type: 'storeResult',
+        result: result
       });
       
       // Send message to background script to update icon
