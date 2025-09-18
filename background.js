@@ -67,18 +67,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // If message type == storeResult, store per-tab result
     if (message.type === 'storeResult' && sender.tab) {
       const tabKey = `sw-domains-result-${sender.tab.id}`;
-      chrome.storage.local.set({
-        [tabKey]: message.result
+      chrome.storage.local.set({ [tabKey]: message.result }, () => {
+        console.log(`[SW-Domains] Stored result for tab ${sender.tab.id}`);
+        // Open the popup only after storage is updated and only for suspicious results
+        if (message.result && message.result.status === 'suspicious') {
+          setTimeout(() => chrome.action.openPopup(), 1000);
+          console.log(`[SW-Domains] Auto-opened popup after storing suspicious result on tab ${sender.tab.id}`);
+        }
       });
-      console.log(`[SW-Domains] Stored result for tab ${sender.tab.id}`);
     }
-
-    // If message type == openPop, trigger pop up
-    if (message.type === 'openPopup' && sender.tab) {
-        chrome.action.openPopup();
-        console.log(`[SW-Domains] Auto-opened popup for suspicious domain on tab ${sender.tab.id}`);
-    }
-    });
+  });
   
   // Clean up storage when tabs are closed
   chrome.tabs.onRemoved.addListener((tabId) => {

@@ -87,11 +87,6 @@ function performFraudDetection() {
           detectionResult: result,
           timestamp: Date.now()
         });
-        
-        chrome.runtime.sendMessage({
-          type: 'openPopup'
-        });
-        
         // Create warning message
         const message = createWarningMessage(result);
         
@@ -173,6 +168,6 @@ new MutationObserver(() => {
   if (url !== lastUrl) {
     lastUrl = url;
     console.log('[SW-Domains] URL changed, re-running detection');
-    setTimeout(performFraudDetection, 1000);
+    setTimeout(performFraudDetection, 300);
   }
 }).observe(document, { subtree: true, childList: true });

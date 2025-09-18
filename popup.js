@@ -8,6 +8,10 @@ console.log('[SW-Domains] Popup loaded');
 
 // DOM elements (just the ones we need)
 let riskDisplay, riskMessage;
+// Track current tab id, storage listener flag, and fallback timer
+let currentTabId = null;
+let storageListenerAdded = false;
+let fallbackTimer = null;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -31,13 +35,14 @@ function loadDomainRisk() {
   // Show loading state while we fetch the result
   showLoadingState();
 
-  // Get domain for current active tab
+  // Get current active tab id (no need to read tab URL)
   chrome.tabs.query({active:true, currentWindow:true}, function(tabs) {
     if (tabs[0]) {
       const currentTab = tabs[0];
-      const url = new URL(currentTab.url);
-      const domain = cleanDomain(url.hostname);
-      console.log('[SW-Domains] Current domain:', domain);
+      currentTabId = currentTab.id;
+      console.log('[SW-Domains] Current tab id:', currentTabId);
+      addStorageListener();
+      startFallbackTimer(2500);
       
       // Get stored domain analysis using per-tab storage key
       chrome.storage.local.get([`sw-domains-result-${currentTab.id}`], function(result) {
@@ -45,10 +50,10 @@ function loadDomainRisk() {
         
         const tabResult = result[`sw-domains-result-${currentTab.id}`];
         if (tabResult) {
-          displayRiskStatus(tabResult, domain);
-        } else {
-          displayUnknownRisk(domain);
-        }
+          // Prefer domain from stored result
+          displayRiskStatus(tabResult, tabResult.domain);
+          clearFallbackTimer();
+        } // else: keep loading; listener + fallback will handle unknown
       });
     }
   });
@@ -99,7 +104,11 @@ function displayRiskStatus(analysisResult, domain) {
  */
 function displayUnknownRisk(domain) {
   riskDisplay.className = 'unknown';
-  riskMessage.textContent = `Não foi possível determinar o nível de risco do domínio ${domain}.`;
+  if (domain) {
+    riskMessage.textContent = `Não foi possível determinar o nível de risco do domínio ${domain}.`;
+  } else {
+    riskMessage.textContent = `Não foi possível determinar o nível de risco deste domínio.`;
+  }
 }
 
 /**
@@ -109,10 +118,11 @@ function displayUnknownRisk(domain) {
 function showLegitimateRisk(result, domain) {
   riskDisplay.className = 'legitimate';
   
+  const d = result.domain || domain || 'este domínio';
   if (result.institutionInfo) {
-    riskMessage.textContent = `O domínio ${domain} é reconhecido como legítimo para ${result.institutionInfo.name}`;
+    riskMessage.textContent = `O domínio ${d} é reconhecido como legítimo para ${result.institutionInfo.name}`;
   } else {
-    riskMessage.textContent = `O domínio ${domain} é reconhecido como legítimo`;
+    riskMessage.textContent = `O domínio ${d} é reconhecido como legítimo`;
   }
 }
 
@@ -123,9 +133,54 @@ function showLegitimateRisk(result, domain) {
 function showSuspiciousRisk(result, domain) {
   riskDisplay.className = 'suspicious';
   
+  const d = result.domain || domain || 'este domínio';
   if (result.detectionResult && result.detectionResult.bankName) {
-    riskMessage.textContent = `Risco de fraude: apesar das semelhanças, o domínio ${domain} não parece ser legítimo. A página web oficial do ${result.detectionResult.bankName} é ${result.detectionResult.legitimateDomain}.`;
+    riskMessage.textContent = `Risco de fraude: apesar das semelhanças, o domínio ${d} não parece ser legítimo. A página web oficial do ${result.detectionResult.bankName} é ${result.detectionResult.legitimateDomain}.`;
   } else {
-    riskMessage.textContent = `Risco de fraude: o domínio ${domain} não parece ser legítimo.`;
+    riskMessage.textContent = `Risco de fraude: o domínio ${d} não parece ser legítimo.`;
   }
 }
+
+/**
+ * Start a fallback timer to show unknown if result doesn't arrive in time
+ */
+function startFallbackTimer(timeoutMs = 800) {
+  clearFallbackTimer();
+  fallbackTimer = setTimeout(() => {
+    displayUnknownRisk(); // generic unknown if no domain yet
+  }, timeoutMs);
+}
+
+/**
+ * Clear any active fallback timer
+ */
+function clearFallbackTimer() {
+  if (fallbackTimer) {
+    clearTimeout(fallbackTimer);
+    fallbackTimer = null;
+  }
+}
+
+/**
+ * Listen to chrome.storage changes and update the popup reactively
+ */
+function addStorageListener() {
+  if (storageListenerAdded) return;
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !currentTabId) return;
+    const key = `sw-domains-result-${currentTabId}`;
+    if (Object.prototype.hasOwnProperty.call(changes, key)) {
+      const newValue = changes[key].newValue;
+      if (newValue) {
+        displayRiskStatus(newValue, newValue.domain);
+        clearFallbackTimer();
+      }
+    }
+  });
+  storageListenerAdded = true;
+}
+
+// Cleanup on popup close
+window.addEventListener('unload', () => {
+  clearFallbackTimer();
+});
