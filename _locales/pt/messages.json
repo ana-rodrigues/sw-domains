@@ -1,0 +1,12 @@
+{
+  "loading_analyzing": { "message": "A analisar..." },
+
+  "unknown_info": { "message": "Não foi possível determinar o nível de risco do domínio $1." },
+  "unknown_generic": { "message": "Não foi possível determinar o nível de risco deste domínio." },
+
+  "legitimate_info": { "message": "O domínio $1 é reconhecido como legítimo para $2." },
+  "legitimate_generic": { "message": "O domínio $1 é reconhecido como legítimo." },
+
+  "suspicious_info": {"message": "Risco de fraude: apesar das semelhanças, o domínio $1 não parece ser legítimo. A página web oficial do $2 é $3."},
+  "suspicious_generic": { "message": "Risco de fraude: o domínio $1 não parece ser legítimo." }
+}

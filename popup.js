@@ -6,25 +6,49 @@
 // Basic popup setup
 console.log('[SW-Domains] Popup loaded');
 
-// DOM elements (just the ones we need)
-let riskDisplay, riskMessage;
-// Track current tab id, storage listener flag, and fallback timer
+// i18n helper: returns localized string or empty if missing
+function t(key, subs = []) {
+  try {
+    return chrome.i18n.getMessage(key, subs) || '';
+  } catch {
+    return '';
+  }
+}
+
+// DOM elements
+let riskDisplay, riskMessage, riskHeadingEl;
+// Track current tab id, domain shown in heading, storage listener flag, and fallback timer
 let currentTabId = null;
 let storageListenerAdded = false;
 let fallbackTimer = null;
+let currentDomain = null;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[SW-Domains] DOM ready');
   
   // Get element references
-  riskDisplay = document.getElementById('riskDisplay');
+  // Match popup.html container id
+  riskDisplay = document.getElementById('riskPopup');
+  riskHeadingEl = document.getElementById('riskHeading');
   riskMessage = document.getElementById('riskMessage');
+  
+  // Pre-populate heading with the active tab domain for responsiveness
+  chrome.tabs.query({active:true, currentWindow:true}, function(tabs) {
+    const tab = tabs && tabs[0];
+    if (tab && tab.url) {
+      try {
+        const url = new URL(tab.url);
+        updateHeadingDomain(cleanDomain(url.hostname));
+      } catch (e) {
+        // ignore invalid URLs
+      }
+    }
+  });
   
   // Load the domain risk status
   loadDomainRisk();
 });
-
 
 /**
  * Load and display a domain risk status
@@ -69,11 +93,23 @@ function cleanDomain(hostname) {
 }
 
 /**
+ * Update the heading with the current domain (safe text only)
+ * @param {string} domain
+ */
+function updateHeadingDomain(domain) {
+  if (!domain || domain === 'este domínio') return; // avoid placeholder
+  currentDomain = domain;
+  if (riskHeadingEl) {
+    riskHeadingEl.textContent = currentDomain;
+  }
+}
+
+/**
  * Show loading state
  */
 function showLoadingState() {
   riskDisplay.className = 'loading';
-  riskMessage.textContent = 'A analisar...';
+  riskMessage.textContent = t('loading_analyzing');
 }
 
 
@@ -104,10 +140,11 @@ function displayRiskStatus(analysisResult, domain) {
  */
 function displayUnknownRisk(domain) {
   riskDisplay.className = 'unknown';
+  if (domain) updateHeadingDomain(domain);
   if (domain) {
-    riskMessage.textContent = `Não foi possível determinar o nível de risco do domínio ${domain}.`;
+    riskMessage.textContent = t('unknown_info', [domain]);
   } else {
-    riskMessage.textContent = `Não foi possível determinar o nível de risco deste domínio.`;
+    riskMessage.textContent = t('unknown_generic');
   }
 }
 
@@ -119,10 +156,11 @@ function showLegitimateRisk(result, domain) {
   riskDisplay.className = 'legitimate';
   
   const d = result.domain || domain || 'este domínio';
+  updateHeadingDomain(d);
   if (result.institutionInfo) {
-    riskMessage.textContent = `O domínio ${d} é reconhecido como legítimo para ${result.institutionInfo.name}`;
+    riskMessage.textContent = t('legitimate_info', [d, result.institutionInfo.name]);
   } else {
-    riskMessage.textContent = `O domínio ${d} é reconhecido como legítimo`;
+    riskMessage.textContent = t('legitimate_generic', [d]);
   }
 }
 
@@ -134,17 +172,22 @@ function showSuspiciousRisk(result, domain) {
   riskDisplay.className = 'suspicious';
   
   const d = result.domain || domain || 'este domínio';
+  updateHeadingDomain(d);
   if (result.detectionResult && result.detectionResult.bankName) {
-    riskMessage.textContent = `Risco de fraude: apesar das semelhanças, o domínio ${d} não parece ser legítimo. A página web oficial do ${result.detectionResult.bankName} é ${result.detectionResult.legitimateDomain}.`;
+    riskMessage.textContent = t('suspicious_info', [
+      d,
+      result.detectionResult.bankName,
+      result.detectionResult.legitimateDomain || ''
+    ]);
   } else {
-    riskMessage.textContent = `Risco de fraude: o domínio ${d} não parece ser legítimo.`;
+    riskMessage.textContent = t('suspicious_generic', [d]);
   }
 }
 
 /**
  * Start a fallback timer to show unknown if result doesn't arrive in time
  */
-function startFallbackTimer(timeoutMs = 800) {
+function startFallbackTimer(timeoutMs = 200) {
   clearFallbackTimer();
   fallbackTimer = setTimeout(() => {
     displayUnknownRisk(); // generic unknown if no domain yet

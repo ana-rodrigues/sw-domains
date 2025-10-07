@@ -3,6 +3,7 @@
   "name": "Safe Web Domain Verification",
   "version": "1.0",
   "description": "Identify legitimate websites and avoid fraud.",
+  "default_locale": "pt",
   "permissions": ["activeTab", "storage", "action"],
   "icons": {
     "16": "icons/icon-default-16.png",
