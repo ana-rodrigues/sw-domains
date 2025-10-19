@@ -9,6 +9,26 @@
  * @returns {number} - Minimum number of edits needed
  */
 
+// Homoglyph mapping: visually similar characters from different alphabets
+const HOMOGLYPH_MAP = {
+  'a': ['а', 'ɑ', 'α', 'ạ', 'ă'],  // Latin a vs Cyrillic/Greek/Vietnamese
+  'c': ['с', 'ϲ', 'ⅽ'],             // Latin c vs Cyrillic/Greek
+  'e': ['е', 'ė', 'ē', 'ę', 'ě'],   // Latin e vs Cyrillic/accented
+  'i': ['і', 'ı', 'ï', 'í', 'ì'],   // Latin i vs Cyrillic/Turkish
+  'o': ['о', 'ο', 'ọ', 'ő', '0'],   // Latin o vs Cyrillic/Greek/digit
+  'p': ['р', 'ρ', 'þ'],             // Latin p vs Cyrillic/Greek
+  's': ['ѕ', 'ś', 'š'],             // Latin s vs Cyrillic/accented
+  'd': ['ԁ', 'ď'],                  // Latin d vs Cyrillic
+  'g': ['ɡ', 'ġ'],                  // Latin g variants
+  'h': ['һ', 'ḥ'],                  // Latin h vs Cyrillic
+  'n': ['ո', 'ñ', 'ń'],             // Latin n variants
+  't': ['τ', 'ţ', 'ť'],             // Latin t vs Greek
+  'u': ['υ', 'ս', 'ü', 'ú'],        // Latin u variants
+  'v': ['ν', 'ѵ'],                  // Latin v vs Greek/Cyrillic
+  'x': ['х', 'χ'],                  // Latin x vs Cyrillic/Greek
+  'y': ['у', 'ý', 'ÿ'],             // Latin y vs Cyrillic
+};
+
 function levenshteinDistance(str1, str2) {
     // Create a 2D matrix: rows = str2.length + 1, cols = str1.length + 1
     const matrix = [];
@@ -45,24 +65,72 @@ function levenshteinDistance(str1, str2) {
     return matrix[str2.length][str1.length];
   }
   
-  /**
-   * Calculate similarity percentage between two strings
-   * @param {string} str1 - First string
-   * @param {string} str2 - Second string
-   * @returns {number} - Similarity percentage (0-100)
-   */
-  function calculateSimilarity(str1, str2) {
-    const maxLength = Math.max(str1.length, str2.length);
+/**
+ * Calculate similarity percentage between two strings
+ * @param {string} str1 - First string
+ * @param {string} str2 - Second string
+ * @returns {number} - Similarity percentage (0-100)
+ */
+function calculateSimilarity(str1, str2) {
+  const maxLength = Math.max(str1.length, str2.length);
+  
+  // Handle edge case: both strings empty = 100% similar
+  if (maxLength === 0) return 100;
+  
+  const distance = levenshteinDistance(str1, str2);
+  
+  // Formula: (maxLength - distance) / maxLength * 100
+  // Example: "cgd.pt" vs "cgd.com" = (6-2)/6 * 100 = 66.7%
+  return ((maxLength - distance) / maxLength) * 100;
+}
+
+/**
+ * Normalize domain by replacing homoglyphs with their Latin equivalents
+ * @param {string} domain - Domain to normalize
+ * @returns {string} - Normalized domain with homoglyphs replaced
+ */
+function normalizeHomoglyphs(domain) {
+  let normalized = domain;
+  
+  // For each character in the domain
+  for (let i = 0; i < domain.length; i++) {
+    const char = domain[i];
     
-    // Handle edge case: both strings empty = 100% similar
-    if (maxLength === 0) return 100;
-    
-    const distance = levenshteinDistance(str1, str2);
-    
-    // Formula: (maxLength - distance) / maxLength * 100
-    // Example: "cgd.pt" vs "cgd.com" = (6-2)/6 * 100 = 66.7%
-    return ((maxLength - distance) / maxLength) * 100;
+    // Check if this character is a homoglyph of any Latin character
+    for (const [latinChar, homoglyphs] of Object.entries(HOMOGLYPH_MAP)) {
+      if (homoglyphs.includes(char)) {
+        // Replace with the Latin equivalent
+        normalized = normalized.replace(char, latinChar);
+        break;
+      }
+    }
   }
+  
+  return normalized;
+}
+
+/**
+ * Detect if domain contains homoglyph characters
+ * @param {string} domain - Domain to check
+ * @param {string} legitimateDomain - Known legitimate domain
+ * @returns {boolean} - True if homoglyphs detected
+ */
+function detectHomoglyphs(domain, legitimateDomain) {
+  const normalizedDomain = normalizeHomoglyphs(domain);
+  
+  // If normalized version matches legitimate domain, original had homoglyphs
+  if (normalizedDomain === legitimateDomain && domain !== legitimateDomain) {
+    return true;
+  }
+  
+  // Check if normalized version is very similar (allows for additional typos)
+  const similarity = calculateSimilarity(normalizedDomain, legitimateDomain);
+  if (similarity > 90 && domain !== normalizedDomain) {
+    return true;
+  }
+  
+  return false;
+}
   
 
 /**
@@ -78,7 +146,8 @@ function levenshteinDistance(str1, str2) {
       characterOmission: false, 
       characterAddition: false,
       subdomainAbuse: false,
-      tldSubstitution: false
+      tldSubstitution: false,
+      homoglyphAttack: false
     };
     
     // Pattern 1: Single character substitution
@@ -127,6 +196,12 @@ function levenshteinDistance(str1, str2) {
       if (domainName === legitName && domainTLD !== legitTLD) {
         patterns.tldSubstitution = true;
       }
+    }
+    
+    // Pattern 6: Homoglyph attack
+    // Example: cgd.pt → cgd.com (visual similarity via homoglyphs)
+    if (detectHomoglyphs(domain, legitimateDomain)) {
+      patterns.homoglyphAttack = true;
     }
     
     return patterns;

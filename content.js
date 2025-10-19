@@ -22,7 +22,6 @@ function shouldSkipDomain(domain) {
     'localhost', '127.0.0.1', 'chrome-extension://', 'moz-extension://',
     'about:', 'chrome://', 'file://', 'data:', 'blob:',
     '.local', '.dev', '.test',
-    // Major platforms to avoid false positives
     'google.com', 'google.pt', 'github.com', 'stackoverflow.com'
   ];
   
@@ -234,8 +233,6 @@ function injectModalStyles() {
   if (document.getElementById('sw-domains-modal-styles')) {
     return;
   }
-  
-  // Create style element with CSS variables and modal styles
   const styleEl = document.createElement('style');
   styleEl.id = 'sw-domains-modal-styles';
   styleEl.textContent = `
