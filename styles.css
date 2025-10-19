@@ -230,7 +230,7 @@ ol, ul {
 
 .heading {
 font-family: var(--font-family-geist-mono, "Geist Mono");
-font-size: var(--text-size-font-size-lg);
+font-size: var(--text-size-font-size-md);
 font-weight: var(--font-weight-light);
 line-height: var(--line-height-regular);
 color: var(--color-grayscale-50);
