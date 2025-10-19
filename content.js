@@ -241,7 +241,7 @@ function injectModalStyles() {
   styleEl.textContent = `
     /* SW-Domains Modal CSS Variables */
     :root {
-      --sw-domains-radius-lg: 16px;
+      --sw-domains-radius-lg: 12px;
     }
     
     /* Backdrop animations */
@@ -284,13 +284,13 @@ function injectModalStyles() {
     }
     
     .sw-domains-modal::backdrop {
-      background: rgba(0, 0, 0, 0.20) !important;
-      backdrop-filter: blur(3px) !important;
+      background: rgba(0, 0, 0, 0.05) !important;
+      backdrop-filter: blur(2px) !important;
       animation: backdropEnter 150ms ease-in-out forwards !important;
     }
     
     .sw-domains-modal.exiting::backdrop {
-      animation: backdropExit 400ms ease-in-out forwards 250ms !important;
+      animation: backdropExit 500ms ease-in-out forwards 250ms !important;
     }
     
     .sw-domains-iframe {

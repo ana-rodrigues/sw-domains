@@ -143,7 +143,7 @@
 --font-family-geist: Geist, sans-serif;
 
 --typography-text-primary: var(--color-grayscale-50);
---typography-text-secondary: var(--color-grayscale-300);
+--typography-text-secondary: var(--color-grayscale-200);
 
 --line-height-tight: 100%;
 --line-height-regular: 120%;
@@ -409,8 +409,15 @@ padding: var(--spacing-sm) var(--spacing-sm) 0px var(--spacing-sm);
 .popupContent {
 display: flex;
 flex-direction: column;
-padding: 0px var(--spacing-md) var(--spacing-2xl) var(--spacing-md);
+padding: 0px var(--spacing-xl) var(--spacing-2xl) var(--spacing-md);
 gap: var(--spacing-md);
+}
+
+.popupContent a {
+@compose body-sm-regular;
+text-transform: lowercase;
+text-decoration: underline;
+text-underline-offset: 4px;
 }
 
 /* Animate content when transitioning from loading to final state */
@@ -425,7 +432,16 @@ padding: var(--spacing-md);
 display: flex;
 flex-direction: row;
 justify-content: space-between;
+align-items: center;
 align-content: baseline;
+}
+
+.popupFooter a {
+display: flex;
+flex-direction: row;
+gap: var(--spacing-sm);
+justify-content: center;
+align-items: center;
 }
 
 
@@ -437,7 +453,7 @@ width: 32px;
 height: 32px;
 border-radius: var(--radius-sm);
 border: none;
-color: white;
+color: var(--buttons-secondary-label);
 background-color: var(--buttons-secondary-background);
 cursor: pointer;
 transition: background-color 200ms ease-out;
