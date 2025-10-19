@@ -1,4 +1,14 @@
 {
+  "name": "sw-domains",
+  "version": "1.0.0",
+  "description": "Safe Web Chrome extension for domain verification and typosquatting detection",
+  "scripts": {
+    "test": "node tests/test-runner.js",
+    "test:verbose": "node tests/test-runner.js --verbose"
+  },
+  "keywords": ["security", "phishing", "typosquatting", "chrome-extension"],
+  "author": "Ana Rodrigues",
+  "license": "MIT",
   "dependencies": {
     "node": "^24.9.0"
   }

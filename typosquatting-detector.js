@@ -271,16 +271,28 @@ function getDynamicThreshold(legitimateDomain, patterns) {
       const similarity = calculateSimilarity(currentDomain, legitDomain);
       const patterns = detectTyposquattingPatterns(currentDomain, legitDomain);
       
-    const threshold = getDynamicThreshold(legitDomain, patterns);
-    const isSuspicious = (
-      similarity > threshold && // Dynamic threshold instead of fixed 70
-      (patterns.characterSubstitution || 
-       patterns.characterOmission || 
-       patterns.characterAddition || 
-       patterns.subdomainAbuse || 
-       patterns.tldSubstitution ||
-       patterns.homoglyphAttack)
-    );
+      // Use dynamic threshold based on domain characteristics
+      const threshold = getDynamicThreshold(legitDomain, patterns);
+      const isSuspicious = (
+        similarity > threshold && // Dynamic threshold instead of fixed 70
+        (patterns.characterSubstitution || 
+         patterns.characterOmission || 
+         patterns.characterAddition || 
+         patterns.subdomainAbuse || 
+         patterns.tldSubstitution ||
+         patterns.homoglyphAttack)
+      );
+      
+      // Keep track of the best match
+      if (isSuspicious && similarity > highestSimilarity) {
+        highestSimilarity = similarity;
+        bestMatch = {
+          domain: legitDomain,
+          info: institutionInfo,
+          similarity: similarity,
+          patterns: patterns
+        };
+      }
     }
     
 // If we found a suspicious match, populate the result
