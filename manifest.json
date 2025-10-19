@@ -23,7 +23,6 @@
     ]
   }],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "Safe Web Domain Verification",
     "default_icon": {
       "16": "icons/icon-default-16.png",
@@ -31,5 +30,9 @@
       "48": "icons/icon-default-48.png",
       "128": "icons/icon-default-128.png"
     }
-  }
+  },
+  "web_accessible_resources": [{
+    "resources": ["popup.html", "styles.css", "popup.js"],
+    "matches": ["<all_urls>"]
+  }]
 }

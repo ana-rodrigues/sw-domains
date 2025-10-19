@@ -142,10 +142,8 @@
 --font-family-geist-mono: Geist Mono, monospace;
 --font-family-geist: Geist, sans-serif;
 
---typography-text-primary: var(--color-grayscale-1800);
---typography-text-secondary: var(--color-grayscale-1200);
---typography-text-primary-invert: var(--color-grayscale-50);
---typography-text-secondary-invert: var(--color-grayscale-300);
+--typography-text-primary: var(--color-grayscale-50);
+--typography-text-secondary: var(--color-grayscale-300);
 
 --line-height-tight: 100%;
 --line-height-regular: 120%;
@@ -158,16 +156,16 @@
 --text-formatting-transform-uppercase: uppercase;
 --text-formatting-decoration-link: underline;
 
---text-size-font-size-xs: 12.640000343322754px;
---text-size-font-size-sm: 14.220000267028809px;
+--text-size-font-size-xs: 12px;
+--text-size-font-size-sm: 14px;
 --text-size-font-size-md: 16px;
 --text-size-font-size-lg: 18px;
---text-size-font-size-xl: 20.25px;
---text-size-font-size-2xl: 22.780000686645508px;
---text-size-font-size-3xl: 25.6299991607666px;
---text-size-font-size-4xl: 28.829999923706055px;
---text-size-font-size-5xl: 32.439998626708984px;
---text-size-font-size-6xl: 36.5px;
+--text-size-font-size-xl: 20px;
+--text-size-font-size-2xl: 22px;
+--text-size-font-size-3xl: 24px;
+--text-size-font-size-4xl: 26px;
+--text-size-font-size-5xl: 28px;
+--text-size-font-size-6xl: 30px;
 
 /* Radii */
 --radius-xs: 4px;
@@ -194,13 +192,17 @@
 }
 
 /* Utilities */
+
 .assistive {
     position: absolute;
-    left: -1000px;
-    top: auto;
     width: 1px;
     height: 1px;
+    padding: 0;
+    margin: -1px;
     overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
   
 /* Reset */
@@ -236,35 +238,38 @@ color: var(--color-grayscale-50);
 
 .body-sm-regular {
 font-family: var(--font-family-geist, "Geist");
-font-size: var(--text-size-font-size-xs);
-font-weight: var(--font-weight-normal);
-line-height: var(--line-height-regular);
+font-size: var(--text-size-font-size-sm);
+font-weight: var(--font-weight-regular);
+line-height: var(--line-height-wide);
 color: var(--color-grayscale-50);
-}
-
-.body-sm-semibold {
-font-family: var(--font-family-geist, "Geist");
-font-size: var(--text-size-font-size-xs);
-font-weight: var(--font-weight-medium);
-line-height: var(--line-height-regular);
-color: var(--color-grayscale-50);
-}
-
-.body-sx-regular {
-font-family: var(--font-family-geist, "Geist");
-font-size: var(--text-size-font-size-xs);
-font-weight: var(--font-weight-normal);
-line-height: var(--line-height-regular);
-color: var(--color-grayscale-50);
+letter-spacing: 0.02em;
 }
 
 .label {
 font-family: var(--font-family-geist-mono, "Geist Mono");
-font-size: var(--text-size-font-size-xs);
-font-weight: var(--font-weight-normal);
+font-size: var(--text-size-font-size-xxs);
+font-weight: var(--font-weight-light);
 line-height: var(--line-height-tight);
-color: var(--color-grayscale-50);
+color: var(--typography-text-secondary);
 text-transform: uppercase;
+letter-spacing: 0.02em;
+}
+
+a {
+font-family: var(--font-family-geist-mono, "Geist Mono");
+font-size: var(--text-size-font-size-xxs);
+font-weight: var(--font-weight-light);
+line-height: var(--line-height-tight);
+color: var(--buttons-ghost-label);
+text-transform: uppercase;
+text-decoration: none;
+letter-spacing: 0.02em;
+transition: color 200ms ease-out;
+}
+
+a:hover {
+color: var(--buttons-ghost-label-hover);
+transition: color 200ms ease-out;
 }
 
 
@@ -273,27 +278,78 @@ text-transform: uppercase;
 body {
 background-color: transparent;
 border: none;
-min-width: 320px;
+min-width: 300px;
 }
 
 #riskPopup {
 display: flex;
 flex-direction: column;
+justify-content: space-between;
 border-radius: var(--radius-md);
 overflow: hidden;
 background-color: var(--surfaces-background-surface);
+min-height: 260px;
+height: 100%;
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+animation: popupEnter 200ms ease-out forwards;
+}
+
+/* Popup animations */
+
+@keyframes popupEnter {
+from {
+opacity: 0;
+transform: translateY(-2px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+@keyframes popupExit {
+from {
+opacity: 1;
+transform: translateY(0);
+}
+to {
+opacity: 0;
+transform: translateY(-4px);
+}
+}
+
+#riskPopup.exiting {
+animation: popupExit 200ms ease-out forwards;
+}
+
+#riskPopup.legitimate {
+background-image: url('../media/legitimate-bg.png');
+}
+
+#riskPopup.suspicious {
+background-image: url('../media/suspicious-bg.png');
+}
+
+#riskPopup.unknown {
+background-image: url('../media/unknown-bg.png');
+}
+
+#riskPopup.loading {
+background-image: none;
 }
 
 .popupHeader {
 display: flex;
 justify-content: flex-end;
-padding: var(--spacing-sm);
+padding: var(--spacing-sm) var(--spacing-sm) 0px var(--spacing-sm);
 }
 
 .popupContent {
 display: flex;
 flex-direction: column;
-padding: var(--spacing-md);
+padding: 0px var(--spacing-md) var(--spacing-2xl) var(--spacing-md);
 gap: var(--spacing-md);
 }
 
@@ -302,8 +358,26 @@ padding: var(--spacing-md);
 display: flex;
 flex-direction: row;
 justify-content: space-between;
-align-content: center;
+align-content: baseline;
 }
 
 
+/* Button */
+
+#closePopup {
+padding: var(--spacing-sm);
+width: 32px;
+height: 32px;
+border-radius: var(--radius-sm);
+border: none;
+color: white;
+background-color: var(--buttons-secondary-background);
+cursor: pointer;
+transition: background-color 200ms ease-out;
+}
+
+#closePopup:hover {
+background-color: var(--buttons-secondary-background-hover);
+transition: background-color 200ms ease-out;
+}
 

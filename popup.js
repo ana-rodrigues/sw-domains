@@ -33,6 +33,21 @@ document.addEventListener('DOMContentLoaded', function() {
   riskHeadingEl = document.getElementById('riskHeading');
   riskMessage = document.getElementById('riskMessage');
   
+  // Set up close button handler
+  const closeButton = document.getElementById('closePopup');
+  if (closeButton) {
+    closeButton.addEventListener('click', function() {
+      console.log('[SW-Domains] Close button clicked');
+      if (riskDisplay) {
+        riskDisplay.classList.add('exiting');
+      }
+      // Wait for animation to complete before sending close message
+      setTimeout(() => {
+        window.parent.postMessage({ type: 'close-modal' }, '*');
+      }, 200); // Match animation duration
+    });
+  }
+  
   // Pre-populate heading with the active tab domain for responsiveness
   chrome.tabs.query({active:true, currentWindow:true}, function(tabs) {
     const tab = tabs && tabs[0];

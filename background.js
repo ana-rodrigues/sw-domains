@@ -69,10 +69,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const tabKey = `sw-domains-result-${sender.tab.id}`;
       chrome.storage.local.set({ [tabKey]: message.result }, () => {
         console.log(`[SW-Domains] Stored result for tab ${sender.tab.id}`);
-        // Open the popup only after storage is updated and only for suspicious results
+        // Open the modal popup only after storage is updated and only for suspicious results
         if (message.result && message.result.status === 'suspicious') {
-          setTimeout(() => chrome.action.openPopup(), 1000);
-          console.log(`[SW-Domains] Auto-opened popup after storing suspicious result on tab ${sender.tab.id}`);
+          setTimeout(() => {
+            chrome.tabs.sendMessage(sender.tab.id, { type: 'show-popup-modal' });
+          }, 1000);
+          console.log(`[SW-Domains] Auto-opened modal after storing suspicious result on tab ${sender.tab.id}`);
         }
       });
     }
@@ -92,4 +94,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'loading') {
     updateExtensionIcon(tabId, 'unknown');
   }
+});
+
+/**
+ * Listen for extension icon clicks and show modal popup
+ * Note: This only fires when there is NO default_popup in manifest
+ */
+chrome.action.onClicked.addListener((tab) => {
+  console.log('[SW-Domains] Extension icon clicked, showing modal');
+  chrome.tabs.sendMessage(tab.id, { type: 'show-popup-modal' });
 });

@@ -171,3 +171,207 @@ new MutationObserver(() => {
     setTimeout(performFraudDetection, 300);
   }
 }).observe(document, { subtree: true, childList: true });
+
+/**
+ * Modal Popup System
+ * Creates an injected modal with rounded corners as an alternative to Chrome's default popup
+ */
+
+/**
+ * Show the popup modal with rounded corners
+ */
+function showPopupModal() {
+  // Prevent duplicate modals
+  if (document.getElementById('sw-domains-modal')) {
+    console.log('[SW-Domains] Modal already exists');
+    return;
+  }
+  
+  console.log('[SW-Domains] Creating popup modal');
+  
+  // Inject CSS variables into page context if not already present
+  injectModalStyles();
+  
+  // Create dialog element with rounded corners
+  const modal = document.createElement('dialog');
+  modal.id = 'sw-domains-modal';
+  modal.className = 'sw-domains-modal';
+  
+  // Create iframe to load popup.html
+  const iframe = document.createElement('iframe');
+  iframe.id = 'sw-domains-iframe';
+  iframe.className = 'sw-domains-iframe';
+  iframe.src = chrome.runtime.getURL('popup.html');
+  
+  modal.appendChild(iframe);
+  document.body.appendChild(modal);
+  
+  // Show the modal
+  modal.showModal();
+  
+  console.log('[SW-Domains] Modal displayed');
+  
+  // Close modal when clicking backdrop
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      initiateModalClose(modal, iframe);
+    }
+  });
+  
+  // Close modal on Escape key
+  modal.addEventListener('cancel', (event) => {
+    event.preventDefault(); // Prevent default close
+    initiateModalClose(modal, iframe);
+  });
+}
+
+/**
+ * Inject modal styles with CSS variables into the page
+ * This ensures our design tokens work even when injected into external pages
+ */
+function injectModalStyles() {
+  // Check if styles already injected
+  if (document.getElementById('sw-domains-modal-styles')) {
+    return;
+  }
+  
+  // Create style element with CSS variables and modal styles
+  const styleEl = document.createElement('style');
+  styleEl.id = 'sw-domains-modal-styles';
+  styleEl.textContent = `
+    /* SW-Domains Modal CSS Variables */
+    :root {
+      --sw-domains-radius-lg: 16px;
+    }
+    
+    /* Backdrop animations */
+    @keyframes backdropEnter {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    @keyframes backdropExit {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    
+    /* Import modal styles from extension */
+    .sw-domains-modal {
+      position: fixed !important;
+      left: auto !important;
+      right: 8px !important;
+      top: 8px !important;
+      border: none !important;
+      border-radius: var(--sw-domains-radius-lg) !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      z-index: 2147483647 !important;
+      max-width: none !important;
+      max-height: none !important;
+      min-height: 260px !important;
+      min-height: auto !important; 
+      transform: none !important;
+      overflow: hidden !important;
+    }
+    
+    .sw-domains-modal::backdrop {
+      background: rgba(0, 0, 0, 0.20) !important;
+      backdrop-filter: blur(3px) !important;
+      animation: backdropEnter 150ms ease-in-out forwards !important;
+    }
+    
+    .sw-domains-modal.exiting::backdrop {
+      animation: backdropExit 400ms ease-in-out forwards 250ms !important;
+    }
+    
+    .sw-domains-iframe {
+      width: 300px !important;
+      max-height: none !important;
+      min-height: 260px !important;
+      height: 100% !important; 
+      border: none !important;
+      border-radius: var(--sw-domains-radius-lg) !important;
+      display: block !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+  `;
+  
+  document.head.appendChild(styleEl);
+  console.log('[SW-Domains] Modal styles injected');
+}
+
+/**
+ * Initiate modal close with exit animations
+ * Triggers exit animation on iframe content, then closes modal
+ * @param {HTMLDialogElement} modal - The modal element
+ * @param {HTMLIFrameElement} iframe - The iframe element
+ */
+function initiateModalClose(modal, iframe) {
+  if (!modal) return;
+  
+  // Add exiting class to modal (for backdrop animation)
+  modal.classList.add('exiting');
+  
+  // Trigger exit animation on iframe content
+  try {
+    const iframeWindow = iframe.contentWindow;
+    const riskPopup = iframeWindow.document.getElementById('riskPopup');
+    if (riskPopup) {
+      riskPopup.classList.add('exiting');
+    }
+  } catch (error) {
+    console.warn('[SW-Domains] Could not access iframe content:', error);
+  }
+  
+  setTimeout(() => {
+    modal.close();
+    modal.remove();
+    console.log('[SW-Domains] Modal closed and removed');
+  }); // Match animation duration
+}
+
+function closePopupModal() {
+  const modal = document.getElementById('sw-domains-modal');
+  const iframe = document.getElementById('sw-domains-iframe');
+  if (modal) {
+    modal.classList.add('exiting');
+    
+    setTimeout(() => {
+      modal.close();
+      modal.remove();
+      console.log('[SW-Domains] Modal closed and removed');
+    });
+  }
+}
+
+/**
+ * Listen for messages from background script to show modal
+ */
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'show-popup-modal') {
+    showPopupModal();
+    sendResponse({ success: true });
+  }
+  return true; // Keep message channel open for async response
+});
+
+/**
+ * Listen for messages from popup (inside iframe) to close modal
+ */
+window.addEventListener('message', (event) => {
+  // Only accept messages with our close-modal type
+  if (event.data && event.data.type === 'close-modal') {
+    closePopupModal();
+  }
+});
