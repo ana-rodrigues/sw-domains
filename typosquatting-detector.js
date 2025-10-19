@@ -131,6 +131,45 @@ function detectHomoglyphs(domain, legitimateDomain) {
   
   return false;
 }
+
+
+/**
+ * Calculate dynamic similarity threshold based on domain characteristics
+ * Shorter domains require higher similarity to flag as suspicious
+ * @param {string} legitimateDomain - The legitimate domain being compared
+ * @param {object} patterns - Detected typosquatting patterns
+ * @returns {number} - Threshold percentage (0-100)
+ */
+function getDynamicThreshold(legitimateDomain, patterns) {
+  const length = legitimateDomain.length;
+  let baseThreshold;
+  
+  // Base threshold by domain length
+  if (length <= 6) {
+    baseThreshold = 85;  // Very short domains (cgd.pt) - strict
+  } else if (length <= 10) {
+    baseThreshold = 80;  // Short domains (novobanco.pt)
+  } else if (length <= 15) {
+    baseThreshold = 75;  // Medium domains (millenniumbcp.pt)
+  } else {
+    baseThreshold = 70;  // Long domains
+  }
+  
+  // Adjust threshold based on detected patterns
+  // High-confidence patterns allow lower threshold
+  if (patterns.homoglyphAttack) {
+    baseThreshold -= 10;  // Homoglyphs are very suspicious
+  }
+  if (patterns.tldSubstitution) {
+    baseThreshold -= 5;   // TLD swap is common attack
+  }
+  if (patterns.subdomainAbuse) {
+    baseThreshold -= 15;  // Subdomain abuse is highly suspicious
+  }
+  
+  // Ensure threshold stays within reasonable bounds
+  return Math.max(60, Math.min(baseThreshold, 90));
+}
   
 
 /**
@@ -232,26 +271,16 @@ function detectHomoglyphs(domain, legitimateDomain) {
       const similarity = calculateSimilarity(currentDomain, legitDomain);
       const patterns = detectTyposquattingPatterns(currentDomain, legitDomain);
       
-      // Determine if this match is suspicious
-      const isSuspicious = (
-        similarity > 70 && // High similarity threshold
-        (patterns.characterSubstitution || 
-         patterns.characterOmission || 
-         patterns.characterAddition || 
-         patterns.subdomainAbuse || 
-         patterns.tldSubstitution)
-      );
-      
-      // Keep track of the best match
-      if (isSuspicious && similarity > highestSimilarity) {
-        highestSimilarity = similarity;
-        bestMatch = {
-          domain: legitDomain,
-          info: institutionInfo,
-          similarity: similarity,
-          patterns: patterns
-        };
-      }
+    const threshold = getDynamicThreshold(legitDomain, patterns);
+    const isSuspicious = (
+      similarity > threshold && // Dynamic threshold instead of fixed 70
+      (patterns.characterSubstitution || 
+       patterns.characterOmission || 
+       patterns.characterAddition || 
+       patterns.subdomainAbuse || 
+       patterns.tldSubstitution ||
+       patterns.homoglyphAttack)
+    );
     }
     
 // If we found a suspicious match, populate the result
