@@ -278,7 +278,6 @@ function injectModalStyles() {
       z-index: 2147483647 !important;
       max-width: none !important;
       max-height: none !important;
-      min-height: 260px !important;
       min-height: auto !important; 
       transform: none !important;
       overflow: hidden !important;
@@ -297,7 +296,7 @@ function injectModalStyles() {
     .sw-domains-iframe {
       width: 300px !important;
       max-height: none !important;
-      min-height: 260px !important;
+      min-height: 320px !important;
       height: 100% !important; 
       border: none !important;
       border-radius: var(--sw-domains-radius-lg) !important;

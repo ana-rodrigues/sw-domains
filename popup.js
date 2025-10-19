@@ -189,13 +189,13 @@ function showSuspiciousRisk(result, domain) {
   const d = result.domain || domain || 'este domínio';
   updateHeadingDomain(d);
   if (result.detectionResult && result.detectionResult.bankName) {
-    riskMessage.textContent = t('suspicious_info', [
+    riskMessage.innerHTML = t('suspicious_info', [
       d,
       result.detectionResult.bankName,
       result.detectionResult.legitimateDomain || ''
     ]);
   } else {
-    riskMessage.textContent = t('suspicious_generic', [d]);
+    riskMessage.innerHTML = t('suspicious_generic', [d]);
   }
 }
 

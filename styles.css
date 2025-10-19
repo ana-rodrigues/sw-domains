@@ -157,7 +157,7 @@
 --text-formatting-decoration-link: underline;
 
 --text-size-font-size-xs: 12px;
---text-size-font-size-sm: 14px;
+--text-size-font-size-sm: 13px;
 --text-size-font-size-md: 16px;
 --text-size-font-size-lg: 18px;
 --text-size-font-size-xl: 20px;
@@ -290,10 +290,27 @@ overflow: hidden;
 background-color: var(--surfaces-background-surface);
 min-height: 260px;
 height: 100%;
+position: relative;
+animation: popupEnter 250ms ease-out forwards;
+}
+
+#riskPopup::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
 background-size: cover;
 background-position: center;
 background-repeat: no-repeat;
-animation: popupEnter 200ms ease-out forwards;
+opacity: 0;
+z-index: 0;
+}
+
+#riskPopup > * {
+position: relative;
+z-index: 1;
 }
 
 /* Popup animations */
@@ -301,7 +318,34 @@ animation: popupEnter 200ms ease-out forwards;
 @keyframes popupEnter {
 from {
 opacity: 0;
-transform: translateY(-2px);
+}
+to {
+opacity: 1;
+}
+}
+
+@keyframes popupExit {
+from {
+opacity: 1;
+}
+to {
+opacity: 0;
+}
+}
+
+@keyframes backgroundFadeIn {
+from {
+opacity: 0;
+}
+to {
+opacity: 1;
+}
+}
+
+@keyframes contentFadeIn {
+from {
+opacity: 0;
+transform: translateY(6px);
 }
 to {
 opacity: 1;
@@ -309,14 +353,15 @@ transform: translateY(0);
 }
 }
 
-@keyframes popupExit {
-from {
-opacity: 1;
-transform: translateY(0);
+@keyframes gradientShift {
+0% {
+background-position: 0% 50%;
 }
-to {
-opacity: 0;
-transform: translateY(-4px);
+50% {
+background-position: 100% 50%;
+}
+100% {
+background-position: 0% 50%;
 }
 }
 
@@ -324,20 +369,35 @@ transform: translateY(-4px);
 animation: popupExit 200ms ease-out forwards;
 }
 
-#riskPopup.legitimate {
+#riskPopup.legitimate::before {
 background-image: url('../media/legitimate-bg.png');
+animation: backgroundFadeIn 300ms ease-out forwards;
 }
 
-#riskPopup.suspicious {
+#riskPopup.suspicious::before {
 background-image: url('../media/suspicious-bg.png');
+animation: backgroundFadeIn 300ms ease-out forwards;
 }
 
-#riskPopup.unknown {
+#riskPopup.unknown::before {
 background-image: url('../media/unknown-bg.png');
+animation: backgroundFadeIn 300ms ease-out forwards;
 }
 
-#riskPopup.loading {
-background-image: none;
+#riskPopup.loading::before {
+background: radial-gradient(
+var(--color-grayscale-1700),
+var(--color-grayscale-1800),
+var(--color-grayscale-1900),
+var(--surfaces-background-surface)
+);
+background-size: 500% 500%;
+animation: gradientShift 2s ease infinite;
+opacity: 1;
+}
+
+#riskPopup.loading .popupContent {
+opacity: 0;
 }
 
 .popupHeader {
@@ -351,6 +411,13 @@ display: flex;
 flex-direction: column;
 padding: 0px var(--spacing-md) var(--spacing-2xl) var(--spacing-md);
 gap: var(--spacing-md);
+}
+
+/* Animate content when transitioning from loading to final state */
+#riskPopup.legitimate .popupContent,
+#riskPopup.suspicious .popupContent,
+#riskPopup.unknown .popupContent {
+animation: contentFadeIn 400ms ease-out 200ms both;
 }
 
 .popupFooter {
