@@ -157,6 +157,9 @@ function getDynamicThreshold(legitimateDomain, patterns) {
   
   // Adjust threshold based on detected patterns
   // High-confidence patterns allow lower threshold
+  if (patterns.characterSubstitution) {
+    baseThreshold -= 10;  // Single char substitution is very suspicious
+  }
   if (patterns.homoglyphAttack) {
     baseThreshold -= 10;  // Homoglyphs are very suspicious
   }

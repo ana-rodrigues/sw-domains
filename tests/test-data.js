@@ -43,14 +43,14 @@ const testCases = [
   // ========================================
   
   // --- CHARACTER SUBSTITUTION ATTACKS ---
-  { domain: "cqd.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "cgd.pt" },
-  { domain: "cgd.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "cgd.pt" },
-  { domain: "millenniumbcp.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "millenniumbcp.pt" },
-  { domain: "bancobpi.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "bancobpi.pt" },
-  { domain: "santander.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "santander.pt" },
-  { domain: "activobank.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "activobank.pt" },
-  { domain: "paypa1.com", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "paypal.com" },
-  { domain: "worten.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "worten.pt" },
+  { domain: "cqd.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "cgd.pt" }, // g→q
+  { domain: "ccd.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "cgd.pt" }, // g→c
+  { domain: "millenniumbop.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "millenniumbcp.pt" }, // c→o
+  { domain: "bancobpl.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "bancobpi.pt" }, // i→l
+  { domain: "santamder.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "santander.pt" }, // n→m
+  { domain: "activobenk.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "activobank.pt" }, // a→e
+  { domain: "paypa1.com", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "paypal.com" }, // l→1
+  { domain: "wortem.pt", expected: "suspicious", attackType: "characterSubstitution", targetInstitution: "worten.pt" }, // n→m
   
   // --- HOMOGLYPH ATTACKS (Cyrillic/Greek characters) ---
   { domain: "сgd.pt", expected: "suspicious", attackType: "homoglyphAttack", targetInstitution: "cgd.pt" }, // Cyrillic 'с'
