@@ -164,14 +164,21 @@ function getDynamicThreshold(legitimateDomain, patterns) {
     baseThreshold -= 10;  // Homoglyphs are very suspicious
   }
   if (patterns.tldSubstitution) {
-    baseThreshold -= 5;   // TLD swap is common attack
+    // TLD substitution has bigger impact on short domains
+    // For short domains, TLD change represents larger % of total string
+    if (length <= 10) {
+      baseThreshold -= 30;  // Short domains: TLD is significant portion
+    } else {
+      baseThreshold -= 15;  // Longer domains: TLD is smaller portion
+    }
   }
   if (patterns.subdomainAbuse) {
     baseThreshold -= 15;  // Subdomain abuse is highly suspicious
   }
   
   // Ensure threshold stays within reasonable bounds
-  return Math.max(60, Math.min(baseThreshold, 90));
+  // Lower bound of 50% allows detection of very short domains with TLD changes
+  return Math.max(50, Math.min(baseThreshold, 90));
 }
   
 
