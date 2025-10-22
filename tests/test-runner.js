@@ -206,6 +206,9 @@ function runTest(testCase, checkForTyposquatting, legitimateInstitutions) {
     detectionResult = checkForTyposquatting(domain);
     if (detectionResult.suspicious) {
       detected = 'suspicious';
+    } else if (detectionResult.status === 'legitimate') {
+      // Domain is a legitimate subdomain (e.g., particulares.santander.pt)
+      detected = 'legitimate';
     }
   }
   

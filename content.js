@@ -96,6 +96,21 @@ function performFraudDetection() {
           console.warn('[SW-Domains] Warning banner system not loaded');
         }
         
+      } else if (result.status === 'legitimate') {
+        // Domain is a legitimate subdomain (e.g., particulares.santander.pt)
+        console.log('[SW-Domains] ✅ Legitimate subdomain detected:', result.reason);
+        
+        // Store positive verification for popup
+        storeVerificationResult({
+          domain: currentDomain,
+          status: 'legitimate',
+          institutionInfo: {
+            name: result.bankName,
+            parentDomain: result.legitimateDomain
+          },
+          timestamp: Date.now()
+        });
+        
       } else {
         console.log('[SW-Domains] Domain appears safe');
         

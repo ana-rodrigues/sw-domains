@@ -172,13 +172,27 @@ function getDynamicThreshold(legitimateDomain, patterns) {
       baseThreshold -= 15;  // Longer domains: TLD is smaller portion
     }
   }
+  if (patterns.characterAddition) {
+    // Character addition (especially with hyphens) can lower similarity significantly
+    // Example: cgd.pt vs cg-dd.pt or banco-bpi-online.pt
+    // The added characters/hyphens increase length, reducing similarity percentage
+    baseThreshold -= 25;  // Lower threshold to catch hyphenated additions
+  }
   if (patterns.subdomainAbuse) {
-    baseThreshold -= 15;  // Subdomain abuse is highly suspicious
+    // Subdomain abuse is EXTREMELY suspicious and has very low similarity
+    // The legitimate domain appears verbatim but similarity is low due to length difference
+    // Example: cgd.pt (6 chars) vs cgd.pt.secure-login.com (24 chars) = only ~25% similarity
+    // For this pattern, we essentially ignore the base threshold
+    baseThreshold = 20;  // Set to minimum - pattern detection is the key signal
   }
   
   // Ensure threshold stays within reasonable bounds
-  // Lower bound of 50% allows detection of very short domains with TLD changes
-  return Math.max(50, Math.min(baseThreshold, 90));
+  // Lower bound depends on pattern type:
+  // - Subdomain abuse can have very low similarity (20-30%) but is highly suspicious
+  // - Character addition with hyphens can have lower similarity (40-50%)
+  // - Other patterns need higher similarity to avoid false positives
+  const minThreshold = patterns.subdomainAbuse ? 15 : patterns.characterAddition ? 40 : 50;
+  return Math.max(minThreshold, Math.min(baseThreshold, 90));
 }
   
 
@@ -213,49 +227,137 @@ function getDynamicThreshold(legitimateDomain, patterns) {
       }
     }
     
+    
     // Pattern 2: Character omission
     // Example: cgd.pt → cd.pt (missing 'g')
     if (domain.length === legitimateDomain.length - 1) {
       patterns.characterOmission = true;
     }
+
     
     // Pattern 3: Character addition  
     // Example: cgd.pt → cgdd.pt (extra 'd')
-    if (domain.length === legitimateDomain.length + 1) {
+    // Also handles hyphenated additions: cgd.pt → cg-dd.pt
+    
+    // Remove hyphens to detect additions hidden by hyphenation
+    const domainNoHyphens = domain.replace(/-/g, '');
+    const legitNoHyphens = legitimateDomain.replace(/-/g, '');
+    
+    // Check if domain (without hyphens) is longer than legitimate domain
+    // Allow up to 8 extra characters to catch additions like "online", "secure", etc.
+    const lengthDiff = domainNoHyphens.length - legitNoHyphens.length;
+    if (lengthDiff >= 1 && lengthDiff <= 8) {
       patterns.characterAddition = true;
     }
     
-    // Pattern 4: Subdomain abuse
-    // Example: cgd.pt.malicious.com (legitimate domain as subdomain)
-    if (domain.includes(legitimateDomain) && domain !== legitimateDomain) {
-      patterns.subdomainAbuse = true;
+    // Also detect pure hyphen insertion (same length after removing hyphens)
+    // Example: cgd.pt → c-g-d.pt (hyphens added but no extra characters)
+    if (domain.includes('-') && !legitimateDomain.includes('-')) {
+      if (domainNoHyphens === legitNoHyphens) {
+        // Pure hyphen insertion - treat as character addition
+        patterns.characterAddition = true;
+      }
+    }
+
+    
+  // Pattern 4: Subdomain abuse
+  // Example: cgd.pt.malicious.com (legitimate domain as subdomain)
+  // CRITICAL: Must distinguish between:
+  // - LEGITIMATE: particulares.santander.pt (subdomain OF santander.pt) ✓
+  // - MALICIOUS: santander.pt.malicious.com (santander.pt BEFORE different root) ✗
+  
+  if (domain.includes(legitimateDomain) && domain !== legitimateDomain) {
+    // STEP 1: First check if this is a LEGITIMATE subdomain
+    // Legitimate subdomains END with the legitimate domain
+    // Examples: particulares.santander.pt, login.cgd.pt, secure.millenniumbcp.pt
+    
+    if (domain.endsWith('.' + legitimateDomain)) {
+      // This is a legitimate subdomain - domain ends with .legitimateDomain
+      // Example: particulares.santander.pt ends with .santander.pt ✓
+      // Do NOT flag as subdomain abuse - this is legitimate
+      // patterns.subdomainAbuse remains false
     }
     
-    // Pattern 5: TLD substitution
-    // Example: cgd.pt → cgd.com (same name, different TLD)
-    const domainParts = domain.split('.');
-    const legitParts = legitimateDomain.split('.');
+    // STEP 2: Check for MALICIOUS subdomain abuse patterns
+    // Only flag if legitimate domain does NOT appear at the end
     
-    if (domainParts.length === legitParts.length && domainParts.length >= 2) {
-      const domainName = domainParts.slice(0, -1).join('.');
-      const legitName = legitParts.slice(0, -1).join('.');
-      const domainTLD = domainParts[domainParts.length - 1];
-      const legitTLD = legitParts[legitParts.length - 1];
+    // Pattern A: Legitimate domain followed by different root domain
+    // Example: cgd.pt.secure-login.com (cgd.pt + different root)
+    else if (domain.startsWith(legitimateDomain + '.')) {
+      // Domain starts with legitimate domain but doesn't end with it
+      // Check if there's a different root domain after
+      const afterLegit = domain.substring(legitimateDomain.length + 1);
+      const afterParts = afterLegit.split('.');
       
-      if (domainName === legitName && domainTLD !== legitTLD) {
-        patterns.tldSubstitution = true;
+      // If there are 2+ parts after, it's a different root domain (MALICIOUS)
+      // Example: cgd.pt.secure-login.com → after "cgd.pt" is "secure-login.com" (2 parts)
+      if (afterParts.length >= 2) {
+        patterns.subdomainAbuse = true;
       }
     }
     
-    // Pattern 6: Homoglyph attack
-    // Example: cgd.pt → cgd.com (visual similarity via homoglyphs)
-    if (detectHomoglyphs(domain, legitimateDomain)) {
-      patterns.homoglyphAttack = true;
+    // Pattern B: Legitimate domain in middle with different root after
+    // Example: login.cgd.pt.verify.com (cgd.pt in middle + different root)
+    else if (domain.includes('.' + legitimateDomain + '.')) {
+      // Legitimate domain appears in the middle
+      const afterLegit = domain.substring(domain.indexOf('.' + legitimateDomain + '.') + legitimateDomain.length + 2);
+      const afterParts = afterLegit.split('.');
+      
+      // If there are 2+ parts after, it's a different root domain (MALICIOUS)
+      if (afterParts.length >= 2) {
+        patterns.subdomainAbuse = true;
+      }
     }
     
-    return patterns;
+    // Pattern C: Hyphenated abuse (always suspicious)
+    // Examples: www-cgd.pt.com, secure-bancobpi.pt.com, cgd-pt.com
+    // Legitimate sites don't hyphenate their own domain name
+    else if (domain.includes('-' + legitimateDomain)) {
+      patterns.subdomainAbuse = true;
+    }
+    // Also check for legitimate domain with hyphen before it at the end
+    // Example: secure-cgd.pt.com (ends with -cgd.pt.com, not .cgd.pt)
+    else if (domain.match(new RegExp('-' + legitimateDomain.replace(/\./g, '\\.') + '\\.'))) {
+      patterns.subdomainAbuse = true;
+    }
+  } 
+  
+  // Pattern 5: TLD substitution
+  // Example: cgd.pt → cgd.com (same name, different TLD)
+  // ENHANCED: Also detects combined attacks (e.g., cgdd.com vs cgd.pt)
+  const domainParts = domain.split('.');
+  const legitParts = legitimateDomain.split('.');
+  
+  if (domainParts.length === legitParts.length && domainParts.length >= 2) {
+    const domainName = domainParts.slice(0, -1).join('.');
+    const legitName = legitParts.slice(0, -1).join('.');
+    const domainTLD = domainParts[domainParts.length - 1];
+    const legitTLD = legitParts[legitParts.length - 1];
+    
+    // ENHANCED: Check if TLDs are different AND names are identical or highly similar
+    // This catches combined attacks like:
+    // - cgdd.com vs cgd.pt (addition + TLD substitution)
+    // - bancopi.com vs bancobpi.pt (omission + TLD substitution)
+    // - paypa1.net vs paypal.com (substitution + TLD substitution)
+    if (domainTLD !== legitTLD) {
+      const nameSimilarity = calculateSimilarity(domainName, legitName);
+      
+      // Detect TLD substitution if names are identical OR highly similar (85%+)
+      if (domainName === legitName || nameSimilarity >= 85) {
+        patterns.tldSubstitution = true;
+      }
+    }
   }
   
+  // Pattern 6: Homoglyph attack
+  // Example: cgd.pt → cgd.com (visual similarity via homoglyphs)
+  if (detectHomoglyphs(domain, legitimateDomain)) {
+    patterns.homoglyphAttack = true;
+  }
+  
+  return patterns;
+}
+
 /**
  * Main typosquatting detection function
  * @param {string} currentDomain - Domain currently being visited
@@ -278,6 +380,23 @@ function getDynamicThreshold(legitimateDomain, patterns) {
     
     // Check against all legitimate institutions
     for (const [legitDomain, institutionInfo] of Object.entries(legitimateInstitutions)) {
+      // FIRST: Check if this is a legitimate subdomain
+      // Legitimate subdomains end with .legitimateDomain (e.g., particulares.santander.pt)
+      if (currentDomain.endsWith('.' + legitDomain)) {
+        // This is a legitimate subdomain - return immediately as legitimate
+        return {
+          suspicious: false,
+          status: 'legitimate',
+          bankName: institutionInfo.name,
+          legitimateDomain: legitDomain,
+          similarity: 100,
+          patterns: {},
+          riskLevel: 'none',
+          confidence: 100,
+          reason: `Legitimate subdomain of ${legitDomain}`
+        };
+      }
+      
       const similarity = calculateSimilarity(currentDomain, legitDomain);
       const patterns = detectTyposquattingPatterns(currentDomain, legitDomain);
       

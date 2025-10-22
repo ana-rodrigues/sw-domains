@@ -421,6 +421,88 @@ const legitimateInstitutions = {
     type: "streaming",
     country: "GLOBAL",
     verified: true
+  },
+  
+  // Additional banks for stress testing
+  "creditoagricola.pt": {
+    name: "Crédito Agrícola",
+    type: "bank",
+    country: "PT",
+    verified: true
+  },
+  "montepio.pt": {
+    name: "Montepio",
+    type: "bank",
+    country: "PT",
+    verified: true
+  },
+  "bankinter.pt": {
+    name: "Bankinter",
+    type: "bank",
+    country: "PT",
+    verified: true
+  },
+  
+  // Additional crypto platforms for stress testing
+  "binance.com": {
+    name: "Binance",
+    type: "crypto",
+    country: "GLOBAL",
+    verified: true
+  },
+  "kraken.com": {
+    name: "Kraken",
+    type: "crypto",
+    country: "US",
+    verified: true
+  },
+  
+  // Additional fintech for stress testing
+  "revolut.com": {
+    name: "Revolut",
+    type: "fintech",
+    country: "UK",
+    verified: true
+  },
+  "n26.com": {
+    name: "N26",
+    type: "fintech",
+    country: "DE",
+    verified: true
+  },
+  
+  // Additional tech companies for testing
+  "google.com": {
+    name: "Google",
+    type: "tech",
+    country: "GLOBAL",
+    verified: true
+  },
+  
+  // Additional payment & fintech for stress testing
+  "wise.com": {
+    name: "Wise",
+    type: "fintech",
+    country: "UK",
+    verified: true
+  },
+  "stripe.com": {
+    name: "Stripe",
+    type: "payment",
+    country: "US",
+    verified: true
+  },
+  "square.com": {
+    name: "Square",
+    type: "payment",
+    country: "US",
+    verified: true
+  },
+  "kraken.com": {
+    name: "Kraken",
+    type: "crypto",
+    country: "US",
+    verified: true
   }
 };
 
