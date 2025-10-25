@@ -2,6 +2,8 @@
 
 console.log('[SW-Domains] Background script loaded');
 
+// Track the last domain for each tab to detect real navigation
+let tabDomains = {};
 
 /**
  * Update extension icon based on risk status
@@ -84,15 +86,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   chrome.tabs.onRemoved.addListener((tabId) => {
     const tabKey = `sw-domains-result-${tabId}`;
     chrome.storage.local.remove(tabKey);
+    delete tabDomains[tabId];
     console.log(`[SW-Domains] Cleaned up storage for closed tab ${tabId}`);
   });
 
 /**
- * Reset icon to default when user navigates to new page
+ * Reset icon to default when user navigates to a NEW page
+ * Only reset if the domain actually changed (not just resource loading)
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'loading') {
-    updateExtensionIcon(tabId, 'unknown');
+  // Only check when URL changes (not on every loading event)
+  if (changeInfo.url) {
+    try {
+      const newDomain = new URL(changeInfo.url).hostname;
+      const previousDomain = tabDomains[tabId];
+      
+      // Only reset icon if navigating to a different domain
+      if (newDomain !== previousDomain) {
+        console.log(`[SW-Domains] Navigation detected: ${previousDomain} → ${newDomain}`);
+        updateExtensionIcon(tabId, 'unknown');
+        tabDomains[tabId] = newDomain;
+      }
+    } catch (error) {
+      // Invalid URL (chrome://, about:, etc.) - ignore
+      console.log('[SW-Domains] Could not parse URL:', changeInfo.url);
+    }
   }
 });
 
