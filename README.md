@@ -1,15 +1,18 @@
 # Safe Web 🛡️
 
-A Chrome extension that protects users from phishing and typosquatting attacks by analyzing domain names in real-time and providing instant visual feedback. This project was built as a learning experiment using Windsurf AI as a tutor to learn JavaScript and Chrome extension development.
+A Chrome extension that protects users from phishing and typosquatting attacks by analyzing domain names in real-time and providing instant visual feedback. 
 
-**⚠️ Disclaimer**: This extension is an experimental project built for learning purposes. While it achieves 94.3% detection accuracy in testing, it should not be considered a complete security solution. Always verify URLs manually when entering sensitive information.
+This project was built as a learning experiment using Windsurf AI as a tutor to learn JavaScript and Chrome extension development.
+
+**Important disclaimer**: This extension is an experimental project built for learning purposes. While it achieves 94.3% detection accuracy in testing, it should not be considered a complete security solution. Always verify URLs manually when entering sensitive information.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?logo=javascript)
 ![Detection Accuracy](https://img.shields.io/badge/Detection-94.3%25-success)
 
----
+
+
 
 ## What It Does
 
@@ -22,7 +25,18 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
 - **TLD Substitution**: `paypal.com` → `paypal.co`
 - **Homoglyph Attacks**: `revolut.com` → `revоlut.com` (Cyrillic 'о')
 
----
+
+## How It Works
+
+1. **Content Script** runs on every webpage and extracts the current domain
+2. **Detection Engine** compares the domain against the institutions database using:
+   - Levenshtein distance algorithm for similarity calculation
+   - Pattern matching for six attack types
+   - Dynamic thresholds based on domain length
+3. **Background Worker** updates the extension icon based on risk level
+4. **Popup Interface** displays detailed information when clicked
+
+
 
 ## Installation
 
@@ -44,7 +58,23 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
    - Visit any unknown site → Blue icon, _unkwown_ website
    - The extension will analyze domains automatically
 
----
+
+
+## 🛠️ Technical Details
+
+**Detection Algorithm**:
+- Implements Levenshtein distance for string similarity
+- Uses dynamic thresholds (85% for short domains, 70% for longer ones)
+- Pattern detection for six attack types
+- Homoglyph mapping for 20+ character pairs
+
+**Supported Institutions**:
+- 15+ Portuguese banks (CGD, Millennium BCP, Santander, etc.)
+- 10+ payment platforms (PayPal, MB WAY, Stripe, etc.)
+- 8+ cryptocurrency exchanges (Coinbase, Binance, Kraken, etc.)
+- 5+ fintech services (Revolut, N26, Wise, etc.)
+
+
 
 ## Architecture
 
@@ -62,38 +92,7 @@ sw-domains/
 └── media/                     # Background images
 ```
 
-### How It Works
 
-1. **Content Script** runs on every webpage and extracts the current domain
-2. **Detection Engine** compares the domain against the institutions database using:
-   - Levenshtein distance algorithm for similarity calculation
-   - Pattern matching for six attack types
-   - Dynamic thresholds based on domain length
-3. **Background Worker** updates the extension icon based on risk level
-4. **Popup Interface** displays detailed information when clicked
-
----
-
-## 🛠️ Technical Details
-
-**Detection Algorithm**:
-- Implements Levenshtein distance for string similarity
-- Uses dynamic thresholds (85% for short domains, 70% for longer ones)
-- Pattern detection for six attack types
-- Homoglyph mapping for 20+ character pairs
-
-**Performance**:
-- Detection time: <50ms
-- Memory footprint: ~2MB
-- No network latency (offline operation)
-
-**Supported Institutions**:
-- 15+ Portuguese banks (CGD, Millennium BCP, Santander, etc.)
-- 10+ payment platforms (PayPal, MB WAY, Stripe, etc.)
-- 8+ cryptocurrency exchanges (Coinbase, Binance, Kraken, etc.)
-- 5+ fintech services (Revolut, N26, Wise, etc.)
-
----
 
 ## Contributing
 
@@ -105,6 +104,3 @@ This is an experimental learning project, but contributions are always welcome! 
 - Add support for other languages
 
 Please open an issue or submit a pull request.
-
-
-
