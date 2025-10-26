@@ -1,8 +1,7 @@
 # Context folder (as requested)
 context/
-
-# Test logs (but keep test files)
-tests/logs/
+casestudy/
+tests/
 
 # Context rules file
 windsurf_rules.md
