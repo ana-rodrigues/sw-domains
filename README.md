@@ -1,4 +1,4 @@
-# Safe Web 🛡️
+# Mira Safe Web
 
 A Chrome extension that protects users from phishing and typosquatting attacks by analyzing domain names in real-time and providing instant visual feedback. 
 
@@ -8,11 +8,8 @@ This project was built as a learning experiment using Windsurf AI as a tutor to 
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?logo=javascript)
-![Detection Accuracy](https://img.shields.io/badge/Detection-94.3%25-success)
 
-
-
+&nbsp;
 
 ## What It Does
 
@@ -25,6 +22,7 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
 - **TLD Substitution**: `paypal.com` → `paypal.co`
 - **Homoglyph Attacks**: `revolut.com` → `revоlut.com` (Cyrillic 'о')
 
+&nbsp;
 
 ## How It Works
 
@@ -36,7 +34,7 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
 3. **Background Worker** updates the extension icon based on risk level
 4. **Popup Interface** displays detailed information when clicked
 
-
+&nbsp;
 
 ## Installation
 
@@ -58,9 +56,9 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
    - Visit any unknown site → Blue icon, _unkwown_ website
    - The extension will analyze domains automatically
 
+&nbsp;
 
-
-## 🛠️ Technical Details
+## Technical Details
 
 **Detection Algorithm**:
 - Implements Levenshtein distance for string similarity
@@ -74,7 +72,7 @@ Safe Web Domains automatically detects fraudulent websites that impersonate legi
 - 8+ cryptocurrency exchanges (Coinbase, Binance, Kraken, etc.)
 - 5+ fintech services (Revolut, N26, Wise, etc.)
 
-
+&nbsp;
 
 ## Architecture
 
@@ -92,7 +90,7 @@ sw-domains/
 └── media/                     # Background images
 ```
 
-
+&nbsp;
 
 ## Contributing
 
