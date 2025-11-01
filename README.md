@@ -2,6 +2,8 @@
 
 A Chrome extension that protects users from phishing and typosquatting attacks by analysing domains in real-time and providing instant visual feedback. This project was built as a learning experiment using Windsurf AI as a tutor to learn Chrome extension development.
 
+<video src="media/Extension%20demo.mp4" controls width="640"></video>
+
 **Important Disclaimer**: This extension is an experimental project built for learning purposes. While it achieves 94.3% detection accuracy in testing, it should not be considered a complete security solution. Always verify URLs manually when entering sensitive information.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
