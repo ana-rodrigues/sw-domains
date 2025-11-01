@@ -1,13 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    body { width: 200px; padding: 10px; }
-  </style>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h3>Security Helper</h3>
-  <p>Extension is active!</p>
+
+  <div id="riskPopup">
+
+  <div>
+    <div class="popupHeader">
+    <button id="closePopup">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 4.7L11.3 4L8 7.3L4.7 4L4 4.7L7.3 8L4 11.3L4.7 12L8 8.7L11.3 12L12 11.3L8.7 8L12 4.7Z" fill="currentColor"/>
+      </svg>
+      <span class="assistive">Close</span>
+    </button>
+    </div>
+
+      <div class="popupContent">  
+        <h1 class="assistive">Risk result</h1>
+        <p id="riskHeading" class="heading">www.domain.com</p>
+        <p id="riskMessage" class="body-sm-regular">A carregar...</p>
+      </div>
+    </div>
+
+      <div class="popupFooter">
+        <p class="label">Safeweb 1.0</p>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">Saber mais <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 3V4H11.295L3 12.295L3.705 13L12 4.705V11H13V3H5Z" fill="currentColor"/>
+      </svg></a>
+      </div>
+
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
