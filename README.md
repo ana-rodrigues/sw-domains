@@ -2,12 +2,14 @@
 
 A Chrome extension that protects users from phishing and typosquatting attacks by analysing domains in real-time and providing instant visual feedback. This project was built as a learning experiment using Windsurf AI as a tutor to learn Chrome extension development.
 
+![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
+![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
+
+&nbsp;
+
 [![Watch the demo](https://private-user-images.githubusercontent.com/32597845/508566484-c5ec3f4b-87ec-4070-aef9-4ccee0a6de4c.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIwMTAwMDUsIm5iZiI6MTc2MjAwOTcwNSwicGF0aCI6Ii8zMjU5Nzg0NS81MDg1NjY0ODQtYzVlYzNmNGItODdlYy00MDcwLWFlZjktNGNjZWUwYTZkZTRjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTExMDElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMTAxVDE1MDgyNVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTYzYjk1OTkxNzRhNGM2ZTE3OTg1ZjRkMDNjNTZiYmQyM2E3MWM1ZDIwMTZmN2UxMTlhNjZiZDZmMjY4MTMyMjkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.At265BCcHZxQGeyFYV2mbcVdfyQDox2Tig_AoTNCDDc)](https://private-user-images.githubusercontent.com/32597845/508566057-2ba574ee-e243-4ac3-b916-54a00d93da9a.mp4?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIwMDk4NzksIm5iZiI6MTc2MjAwOTU3OSwicGF0aCI6Ii8zMjU5Nzg0NS81MDg1NjYwNTctMmJhNTc0ZWUtZTI0My00YWMzLWI5MTYtNTRhMDBkOTNkYTlhLm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTExMDElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMTAxVDE1MDYxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTI1NDQwNWNjZWIyMmJjZjdjOTgwM2RmNWU0MzBmZWIzZGIxMzVmZTUwNGQxNzMyNWFkNzYwOWUxOTY5MjZkMGUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.iYa8A8mfTvPesmUVarZ5Le6gbj4XBH87ENQPXXo2jt8)
 
 **Important Disclaimer**: This extension is an experimental project built for learning purposes. While it achieves 94.3% detection accuracy in testing, it should not be considered a complete security solution. Always verify URLs manually when entering sensitive information.
-
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
-![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
 
 &nbsp;
 
