@@ -1,7 +1,6 @@
 # Context folder (as requested)
 context/
 casestudy/
-tests/
 
 # Context rules file
 windsurf_rules.md
