@@ -34,17 +34,23 @@ const legitimateInstitutions = {
     country: "PT", 
     verified: true 
   },
-  "creditoagricola.pt": { 
-    name: "Crédito Agrícola", 
-    type: "bank", 
-    country: "PT", 
-    verified: true 
+  "creditoagricola.pt": {
+    name: "Crédito Agrícola",
+    type: "bank",
+    country: "PT",
+    verified: true
   },
-  "bancomontepio.pt": { 
-    name: "Banco Montepio", 
-    type: "bank", 
-    country: "PT", 
-    verified: true 
+  "bancomontepio.pt": {
+    name: "Banco Montepio",
+    type: "bank",
+    country: "PT",
+    verified: true
+  },
+  "montepio.pt": {
+    name: "Montepio",
+    type: "bank",
+    country: "PT",
+    verified: true
   },
   "bancobest.pt": { 
     name: "Banco Best", 
@@ -78,20 +84,20 @@ const legitimateInstitutions = {
   },
   "n26.com": {
     name: "N26",
-    type: "bank",
-    country: "GLOBAL",
+    type: "fintech",
+    country: "DE",
     verified: true
   },
   "revolut.com": {
     name: "Revolut",
-    type: "bank",
-    country: "GLOBAL",
+    type: "fintech",
+    country: "UK",
     verified: true
   },
   "wise.com": {
     name: "Wise",
-    type: "bank",
-    country: "GLOBAL",
+    type: "fintech",
+    country: "UK",
     verified: true
   },
   "bancocarregosa.com": {
@@ -179,7 +185,13 @@ const legitimateInstitutions = {
   "stripe.com": {
     name: "Stripe",
     type: "payment",
-    country: "GLOBAL",
+    country: "US",
+    verified: true
+  },
+  "square.com": {
+    name: "Square",
+    type: "payment",
+    country: "US",
     verified: true
   },
   "coinbase.com": {
@@ -197,7 +209,7 @@ const legitimateInstitutions = {
   "kraken.com": {
     name: "Kraken",
     type: "crypto",
-    country: "GLOBAL",
+    country: "US",
     verified: true
   },
 
@@ -410,6 +422,12 @@ const legitimateInstitutions = {
     country: "GLOBAL",
     verified: true
   },
+  "google.com": {
+    name: "Google",
+    type: "tech",
+    country: "GLOBAL",
+    verified: true
+  },
   "netflix.com": {
     name: "Netflix",
     type: "streaming",
@@ -420,88 +438,6 @@ const legitimateInstitutions = {
     name: "Spotify",
     type: "streaming",
     country: "GLOBAL",
-    verified: true
-  },
-  
-  // Additional banks for stress testing
-  "creditoagricola.pt": {
-    name: "Crédito Agrícola",
-    type: "bank",
-    country: "PT",
-    verified: true
-  },
-  "montepio.pt": {
-    name: "Montepio",
-    type: "bank",
-    country: "PT",
-    verified: true
-  },
-  "bankinter.pt": {
-    name: "Bankinter",
-    type: "bank",
-    country: "PT",
-    verified: true
-  },
-  
-  // Additional crypto platforms for stress testing
-  "binance.com": {
-    name: "Binance",
-    type: "crypto",
-    country: "GLOBAL",
-    verified: true
-  },
-  "kraken.com": {
-    name: "Kraken",
-    type: "crypto",
-    country: "US",
-    verified: true
-  },
-  
-  // Additional fintech for stress testing
-  "revolut.com": {
-    name: "Revolut",
-    type: "fintech",
-    country: "UK",
-    verified: true
-  },
-  "n26.com": {
-    name: "N26",
-    type: "fintech",
-    country: "DE",
-    verified: true
-  },
-  
-  // Additional tech companies for testing
-  "google.com": {
-    name: "Google",
-    type: "tech",
-    country: "GLOBAL",
-    verified: true
-  },
-  
-  // Additional payment & fintech for stress testing
-  "wise.com": {
-    name: "Wise",
-    type: "fintech",
-    country: "UK",
-    verified: true
-  },
-  "stripe.com": {
-    name: "Stripe",
-    type: "payment",
-    country: "US",
-    verified: true
-  },
-  "square.com": {
-    name: "Square",
-    type: "payment",
-    country: "US",
-    verified: true
-  },
-  "kraken.com": {
-    name: "Kraken",
-    type: "crypto",
-    country: "US",
     verified: true
   }
 };
