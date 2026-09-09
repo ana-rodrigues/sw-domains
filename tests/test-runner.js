@@ -10,6 +10,7 @@ const { testCases } = require('./test-data.js');
 // We need to simulate the browser environment for the extension code
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 // Logging configuration
 const LOGS_DIR = path.join(__dirname, 'logs');
@@ -157,33 +158,34 @@ const progressChars = {
   empty: '░',
 };
 
+// Content scripts, in the order manifest.json loads them (minus content.js,
+// which only runs in a real page). Each file is a plain global script with
+// no module system, exactly like Chrome loads them — so tests run them the
+// same way via vm.runInContext rather than eval(), which keeps each file's
+// top-level declarations isolated the way separate <script> tags would.
+const EXTENSION_SCRIPT_FILES = [
+  'public-suffix-list.js',
+  'public-suffix.js',
+  'homoglyph-confusables.js',
+  'institutions.js',
+  'typosquatting-detector.js',
+];
+
 /**
  * Load and execute extension code in Node.js context
  */
 function loadExtensionCode() {
-  // Create a mock window object for the extension code
-  global.window = {};
-  
-  // Load institutions database (from parent directory)
-  const institutionsCode = fs.readFileSync(
-    path.join(__dirname, '..', 'institutions.js'),
-    'utf8'
-  );
-  eval(institutionsCode);
-  
-  // Make legitimateInstitutions globally available for the detector
-  global.legitimateInstitutions = global.window.legitimateInstitutions;
-  
-  // Load typosquatting detector (from parent directory)
-  const detectorCode = fs.readFileSync(
-    path.join(__dirname, '..', 'typosquatting-detector.js'),
-    'utf8'
-  );
-  eval(detectorCode);
-  
+  const sandbox = { window: {}, console };
+  vm.createContext(sandbox);
+
+  for (const file of EXTENSION_SCRIPT_FILES) {
+    const code = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    vm.runInContext(code, sandbox, { filename: file });
+  }
+
   return {
-    legitimateInstitutions: global.window.legitimateInstitutions,
-    checkForTyposquatting: global.window.checkForTyposquatting,
+    legitimateInstitutions: sandbox.window.legitimateInstitutions,
+    checkForTyposquatting: sandbox.window.checkForTyposquatting,
   };
 }
 

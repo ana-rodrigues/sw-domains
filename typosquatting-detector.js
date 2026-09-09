@@ -9,25 +9,27 @@
  * @returns {number} - Minimum number of edits needed
  */
 
-// Homoglyph mapping: visually similar characters from different alphabets
-const HOMOGLYPH_MAP = {
-  'a': ['а', 'ɑ', 'α', 'ạ', 'ă'],  // Latin a vs Cyrillic/Greek/Vietnamese
-  'c': ['с', 'ϲ', 'ⅽ'],             // Latin c vs Cyrillic/Greek
-  'e': ['е', 'ė', 'ē', 'ę', 'ě'],   // Latin e vs Cyrillic/accented
-  'i': ['і', 'ı', 'ï', 'í', 'ì'],   // Latin i vs Cyrillic/Turkish
-  'o': ['о', 'ο', 'ọ', 'ő', '0'],   // Latin o vs Cyrillic/Greek/digit
-  'p': ['р', 'ρ', 'þ'],             // Latin p vs Cyrillic/Greek
-  's': ['ѕ', 'ś', 'š'],             // Latin s vs Cyrillic/accented
-  'd': ['ԁ', 'ď'],                  // Latin d vs Cyrillic
-  'g': ['ɡ', 'ġ'],                  // Latin g variants
-  'h': ['һ', 'ḥ'],                  // Latin h vs Cyrillic
-  'n': ['ո', 'ñ', 'ń'],             // Latin n variants
-  't': ['τ', 'ţ', 'ť'],             // Latin t vs Greek
-  'u': ['υ', 'ս', 'ü', 'ú'],        // Latin u variants
-  'v': ['ν', 'ѵ'],                  // Latin v vs Greek/Cyrillic
-  'x': ['х', 'χ'],                  // Latin x vs Cyrillic/Greek
-  'y': ['у', 'ý', 'ÿ'],             // Latin y vs Cyrillic
-};
+// Homoglyph normalization is backed by CONFUSABLES_MAP_RAW, a table derived
+// from Unicode's official confusables.txt (loaded via homoglyph-confusables.js
+// — see manifest.json for load order), rather than a small hand-rolled list.
+// Build a reverse lookup: confusable char -> Latin letter/digit it renders as.
+function buildConfusablesLookup(rawMap) {
+  const lookup = {};
+  for (const [latinChar, confusables] of Object.entries(rawMap || {})) {
+    for (const confusable of confusables) {
+      lookup[confusable] = latinChar;
+    }
+  }
+  return lookup;
+}
+
+let confusablesLookupCache = null;
+function getConfusablesLookup() {
+  if (!confusablesLookupCache) {
+    confusablesLookupCache = buildConfusablesLookup(window.CONFUSABLES_MAP_RAW);
+  }
+  return confusablesLookupCache;
+}
 
 function levenshteinDistance(str1, str2) {
     // Create a 2D matrix: rows = str2.length + 1, cols = str1.length + 1
@@ -90,22 +92,16 @@ function calculateSimilarity(str1, str2) {
  * @returns {string} - Normalized domain with homoglyphs replaced
  */
 function normalizeHomoglyphs(domain) {
-  let normalized = domain;
-  
-  // For each character in the domain
-  for (let i = 0; i < domain.length; i++) {
-    const char = domain[i];
-    
-    // Check if this character is a homoglyph of any Latin character
-    for (const [latinChar, homoglyphs] of Object.entries(HOMOGLYPH_MAP)) {
-      if (homoglyphs.includes(char)) {
-        // Replace with the Latin equivalent
-        normalized = normalized.replace(char, latinChar);
-        break;
-      }
-    }
+  // NFKC first: folds compatibility variants (fullwidth forms, some accented
+  // letters) to their canonical form before confusable lookup runs.
+  const nfkc = domain.normalize('NFKC');
+  const lookup = getConfusablesLookup();
+
+  let normalized = '';
+  for (const char of nfkc) {
+    normalized += lookup[char] || char;
   }
-  
+
   return normalized;
 }
 
@@ -130,6 +126,33 @@ function detectHomoglyphs(domain, legitimateDomain) {
   }
   
   return false;
+}
+
+/**
+ * Check whether legitimateDomain is embedded in domain in a way that's worth
+ * inspecting for subdomain abuse — either as a label-aligned run (so
+ * "cgd.pt.evil.com" matches "cgd.pt" but "notcgd.pt.example.com" does NOT,
+ * since "cgd" there is only a suffix of the "notcgd" label, not a label of
+ * its own — see SIDE-25) or glued onto a label via a hyphen (so
+ * "secure-cgd.pt.com" still matches, since that hyphenation is itself a
+ * distinct suspicious signal handled below as Pattern C).
+ * @param {string} domain
+ * @param {string} legitimateDomain
+ * @returns {boolean}
+ */
+function isLegitimateDomainEmbedded(domain, legitimateDomain) {
+  const domainLabels = domain.split('.');
+  const legitLabels = legitimateDomain.split('.');
+
+  for (let i = 0; i <= domainLabels.length - legitLabels.length; i++) {
+    if (domainLabels.slice(i, i + legitLabels.length).join('.') === legitimateDomain) {
+      return true;
+    }
+  }
+
+  const escapedLegit = legitimateDomain.replace(/\./g, '\\.');
+  return new RegExp('(^|[.-])' + escapedLegit + '([.-]|$)').test(domain)
+    && domain !== legitimateDomain;
 }
 
 
@@ -266,7 +289,7 @@ function getDynamicThreshold(legitimateDomain, patterns) {
   // - LEGITIMATE: particulares.santander.pt (subdomain OF santander.pt) ✓
   // - MALICIOUS: santander.pt.malicious.com (santander.pt BEFORE different root) ✗
   
-  if (domain.includes(legitimateDomain) && domain !== legitimateDomain) {
+  if (isLegitimateDomainEmbedded(domain, legitimateDomain) && domain !== legitimateDomain) {
     // STEP 1: First check if this is a LEGITIMATE subdomain
     // Legitimate subdomains END with the legitimate domain
     // Examples: particulares.santander.pt, login.cgd.pt, secure.millenniumbcp.pt
@@ -322,30 +345,26 @@ function getDynamicThreshold(legitimateDomain, patterns) {
     }
   } 
   
-  // Pattern 5: TLD substitution
+  // Pattern 5: TLD/suffix substitution
   // Example: cgd.pt → cgd.com (same name, different TLD)
-  // ENHANCED: Also detects combined attacks (e.g., cgdd.com vs cgd.pt)
-  const domainParts = domain.split('.');
-  const legitParts = legitimateDomain.split('.');
-  
-  if (domainParts.length === legitParts.length && domainParts.length >= 2) {
-    const domainName = domainParts.slice(0, -1).join('.');
-    const legitName = legitParts.slice(0, -1).join('.');
-    const domainTLD = domainParts[domainParts.length - 1];
-    const legitTLD = legitParts[legitParts.length - 1];
-    
-    // ENHANCED: Check if TLDs are different AND names are identical or highly similar
+  // Uses PSL-based suffix parsing (public-suffix.js) instead of comparing the
+  // last dot-separated label, so multi-label suffixes are handled correctly —
+  // e.g. "justica.pt" vs "justica.gov.pt" is a suffix substitution ("pt" vs
+  // "gov.pt") with an identical name, not a same-length coincidence (SIDE-24).
+  const { name: domainName, suffix: domainSuffix } = splitNameAndSuffix(domain);
+  const { name: legitName, suffix: legitSuffix } = splitNameAndSuffix(legitimateDomain);
+
+  if (domainSuffix !== legitSuffix && domainName && legitName) {
+    // Check if suffixes are different AND names are identical or highly similar
     // This catches combined attacks like:
     // - cgdd.com vs cgd.pt (addition + TLD substitution)
     // - bancopi.com vs bancobpi.pt (omission + TLD substitution)
     // - paypa1.net vs paypal.com (substitution + TLD substitution)
-    if (domainTLD !== legitTLD) {
-      const nameSimilarity = calculateSimilarity(domainName, legitName);
-      
-      // Detect TLD substitution if names are identical OR highly similar (85%+)
-      if (domainName === legitName || nameSimilarity >= 85) {
-        patterns.tldSubstitution = true;
-      }
+    const nameSimilarity = calculateSimilarity(domainName, legitName);
+
+    // Detect TLD substitution if names are identical OR highly similar (85%+)
+    if (domainName === legitName || nameSimilarity >= 85) {
+      patterns.tldSubstitution = true;
     }
   }
   
