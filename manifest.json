@@ -17,8 +17,11 @@
   "content_scripts": [{
     "matches": ["<all_urls>"],
     "js": [
+      "public-suffix-list.js",
+      "public-suffix.js",
+      "homoglyph-confusables.js",
       "institutions.js",
-      "typosquatting-detector.js", 
+      "typosquatting-detector.js",
       "content.js"
     ]
   }],
