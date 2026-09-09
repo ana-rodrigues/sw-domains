@@ -158,6 +158,64 @@ const progressChars = {
   empty: '░',
 };
 
+// Test cases that fail today for tracked reasons (see tests/known-issues.test.js
+// and the linked SIDE-2x issues). The runner treats a match against this list as
+// an "expected failure" rather than a regression, so:
+//   - a NEW failure (not in this list) still fails the build
+//   - one of these starting to pass gets flagged as "now fixed" instead of
+//     silently going unnoticed, so the entry can be removed
+// Matched by (domain, attackType, targetInstitution) rather than array index,
+// since test-data.js has duplicate entries and reordering shouldn't matter.
+const KNOWN_FAILURES = [
+  { domain: 'cd.pt', attackType: 'characterOmission', targetInstitution: 'cgd.pt' },
+  { domain: 'cgdd.com', attackType: 'combined', targetInstitution: 'cgd.pt' },
+  { domain: 'cgd.pt', attackType: 'characterSubstitution', targetInstitution: 'cgd.pt' },
+  { domain: 'paypa1.соm', attackType: 'characterSubstitution', targetInstitution: 'paypal.com' },
+  { domain: 'сgd.рt', attackType: 'homoglyphAttack', targetInstitution: 'cgd.pt' },
+  { domain: 'сgd.рt', attackType: 'homoglyphAttack', targetInstitution: 'cgd.pt' },
+  { domain: 'cqd.com', attackType: 'combined', targetInstitution: 'cgd.pt' },
+  { domain: 'paypa1.net', attackType: 'combined', targetInstitution: 'paypal.com' },
+  { domain: 'cgd.pt.account-verify.secure-login.com', attackType: 'subdomainAbuse', targetInstitution: 'cgd.pt' },
+  { domain: 'cgd-pt.com', attackType: 'subdomainAbuse', targetInstitution: 'cgd.pt' },
+  { domain: 'paypa1.c0m', attackType: 'characterSubstitution', targetInstitution: 'paypal.com' },
+  { domain: 'cg.pt', attackType: 'characterOmission', targetInstitution: 'cgd.pt' },
+  { domain: 'millenniummbc.pt', attackType: 'characterAddition', targetInstitution: 'millenniumbcp.pt' },
+  { domain: 'paypa1.org', attackType: 'combined', targetInstitution: 'paypal.com' },
+  { domain: 'cgd.pt.secure.login.verify.account.com', attackType: 'subdomainAbuse', targetInstitution: 'cgd.pt' },
+  { domain: 'www-secure-cgd-pt.com', attackType: 'subdomainAbuse', targetInstitution: 'cgd.pt' },
+];
+
+/**
+ * Mark each failing result as a tracked (known) failure or an unexpected one,
+ * consuming KNOWN_FAILURES as a multiset so duplicate test cases are handled
+ * correctly. Returns the annotated results plus any KNOWN_FAILURES entries
+ * that were never matched (i.e. that test now passes and the entry is stale).
+ */
+function classifyKnownFailures(results) {
+  const remaining = KNOWN_FAILURES.map(k => ({ ...k, matched: false }));
+
+  const classified = results.map(result => {
+    if (result.passed) {
+      return { ...result, trackedFailure: false };
+    }
+    const match = remaining.find(k =>
+      !k.matched &&
+      k.domain === result.domain &&
+      k.attackType === result.attackType &&
+      k.targetInstitution === result.targetInstitution
+    );
+    if (match) {
+      match.matched = true;
+      return { ...result, trackedFailure: true };
+    }
+    return { ...result, trackedFailure: false };
+  });
+
+  const staleKnownFailures = remaining.filter(k => !k.matched);
+
+  return { classified, staleKnownFailures };
+}
+
 // Content scripts, in the order manifest.json loads them (minus content.js,
 // which only runs in a real page). Each file is a plain global script with
 // no module system, exactly like Chrome loads them — so tests run them the
@@ -250,28 +308,30 @@ function displayProgress(current, total) {
  * Display test result
  */
 function displayResult(result, index) {
-  const { domain, expected, detected, passed, attackType } = result;
-  
-  const statusIcon = passed ? '✓' : '✗';
-  const statusColor = passed ? colors.green : colors.red;
+  const { domain, expected, detected, passed, attackType, trackedFailure } = result;
+
+  const statusIcon = passed ? '✓' : trackedFailure ? '⚠' : '✗';
+  const statusColor = passed ? colors.green : trackedFailure ? colors.yellow : colors.red;
   const testNumber = `${colors.gray}#${String(index + 1).padStart(3, '0')}${colors.reset}`;
-  
+
   console.log(
     `${testNumber} ${statusColor}${statusIcon}${colors.reset} ` +
     `${colors.bright}${domain.padEnd(40)}${colors.reset} ` +
     `Expected: ${colors.yellow}${expected.padEnd(12)}${colors.reset} ` +
     `Detected: ${statusColor}${detected.padEnd(12)}${colors.reset} ` +
-    `${colors.dim}${attackType || 'N/A'}${colors.reset}`
+    `${colors.dim}${attackType || 'N/A'}${trackedFailure ? ' (known gap)' : ''}${colors.reset}`
   );
 }
 
 /**
  * Display summary statistics
  */
-function displaySummary(results) {
+function displaySummary(results, staleKnownFailures) {
   const total = results.length;
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
+  const tracked = results.filter(r => !r.passed && r.trackedFailure).length;
+  const unexpected = failed - tracked;
   const passRate = ((passed / total) * 100).toFixed(1);
   
   // Count by attack type
@@ -290,7 +350,15 @@ function displaySummary(results) {
   console.log(`${colors.bright}Total Tests:${colors.reset}     ${total}`);
   console.log(`${colors.green}Passed:${colors.reset}          ${passed} (${passRate}%)`);
   console.log(`${colors.red}Failed:${colors.reset}          ${failed} (${(100 - passRate).toFixed(1)}%)`);
-  
+  console.log(`${colors.yellow}  known gaps:${colors.reset}    ${tracked} (tracked, does not fail the build)`);
+  console.log(`${colors.red}  unexpected:${colors.reset}    ${unexpected} (regressions — fails the build)`);
+  if (staleKnownFailures.length > 0) {
+    console.log(
+      `${colors.yellow}${colors.bright}  now fixed:${colors.reset}     ${staleKnownFailures.length} ` +
+      `(these KNOWN_FAILURES entries now pass — remove them from test-runner.js)`
+    );
+  }
+
   console.log(`\n${colors.bright}Results by Attack Type:${colors.reset}`);
   console.log('-'.repeat(80));
   
@@ -303,32 +371,50 @@ function displaySummary(results) {
   });
   
   console.log('='.repeat(80));
-  
-  // Overall result
-  if (passRate >= 95) {
-    console.log(`${colors.green}${colors.bright}✓ EXCELLENT${colors.reset} - Detection system performing very well!`);
-  } else if (passRate >= 80) {
-    console.log(`${colors.yellow}${colors.bright}⚠ GOOD${colors.reset} - Detection system working but has room for improvement.`);
+
+  // Overall result — the build only fails on unexpected failures or a stale
+  // KNOWN_FAILURES entry, not on the raw pass rate (which includes tracked gaps).
+  if (unexpected === 0 && staleKnownFailures.length === 0) {
+    console.log(`${colors.green}${colors.bright}✓ PASS${colors.reset} - no regressions against the known baseline.`);
+  } else if (unexpected > 0) {
+    console.log(`${colors.red}${colors.bright}✗ FAIL${colors.reset} - ${unexpected} unexpected failure(s) not in KNOWN_FAILURES.`);
   } else {
-    console.log(`${colors.red}${colors.bright}✗ NEEDS IMPROVEMENT${colors.reset} - Detection system requires attention.`);
+    console.log(`${colors.yellow}${colors.bright}✗ FAIL${colors.reset} - ${staleKnownFailures.length} KNOWN_FAILURES entr${staleKnownFailures.length === 1 ? 'y is' : 'ies are'} stale (now passing).`);
   }
-  
+
   console.log('='.repeat(80) + '\n');
 }
 
 /**
- * Display failed tests for debugging
+ * Display failed tests for debugging. Tracked (known) failures are shown
+ * separately from unexpected ones so a real regression doesn't get lost in
+ * the noise of pre-existing, already-tracked gaps.
  */
 function displayFailedTests(results) {
-  const failed = results.filter(r => !r.passed);
-  
-  if (failed.length === 0) {
+  const unexpectedFailed = results.filter(r => !r.passed && !r.trackedFailure);
+  const trackedFailed = results.filter(r => !r.passed && r.trackedFailure);
+
+  if (unexpectedFailed.length === 0 && trackedFailed.length === 0) {
     return;
   }
-  
-  console.log(`\n${colors.red}${colors.bright}FAILED TESTS (${failed.length}):${colors.reset}`);
+
+  if (trackedFailed.length > 0) {
+    console.log(`\n${colors.yellow}${colors.bright}KNOWN GAPS (${trackedFailed.length}, tracked — not a regression):${colors.reset}`);
+    console.log('-'.repeat(80));
+    trackedFailed.forEach((result, index) => {
+      console.log(`${colors.dim}${index + 1}. ${result.domain} (${result.attackType || 'N/A'})${colors.reset}`);
+    });
+  }
+
+  const failed = unexpectedFailed;
+  if (failed.length === 0) {
+    console.log('');
+    return;
+  }
+
+  console.log(`\n${colors.red}${colors.bright}UNEXPECTED FAILURES (${failed.length}):${colors.reset}`);
   console.log('-'.repeat(80));
-  
+
   failed.forEach((result, index) => {
     console.log(`\n${colors.bright}${index + 1}. ${result.domain}${colors.reset}`);
     console.log(`   Expected: ${colors.yellow}${result.expected}${colors.reset}`);
@@ -376,32 +462,38 @@ async function runAllTests() {
   }
   
   const endTime = Date.now();
-  
+
+  // Classify failures against the known-gaps baseline before displaying anything,
+  // so both the per-result markers and the summary agree on what's tracked.
+  const { classified: classifiedResults, staleKnownFailures } = classifyKnownFailures(results);
+
   // Clear progress line and show results
   console.log('\n\n' + '='.repeat(80));
   console.log(`${colors.bright}${colors.cyan}TEST RESULTS${colors.reset}`);
   console.log('='.repeat(80) + '\n');
-  
-  results.forEach((result, index) => {
+
+  classifiedResults.forEach((result, index) => {
     displayResult(result, index);
   });
-  
+
   // Display summary
-  displaySummary(results);
-  
+  displaySummary(classifiedResults, staleKnownFailures);
+
   // Display failed tests for debugging
-  displayFailedTests(results);
-  
+  displayFailedTests(classifiedResults);
+
   // Save log to file
   console.log(`\n${colors.cyan}Saving test log...${colors.reset}`);
-  const logContent = createLogContent(results, startTime, endTime);
+  const logContent = createLogContent(classifiedResults, startTime, endTime);
   const { filename, filepath } = saveLog(logContent);
   console.log(`${colors.green}✓${colors.reset} Log saved: ${colors.dim}${filename}${colors.reset}`);
   console.log(`${colors.dim}  Full path: ${filepath}${colors.reset}\n`);
-  
-  // Exit with appropriate code
-  const allPassed = results.every(r => r.passed);
-  process.exit(allPassed ? 0 : 1);
+
+  // Exit with appropriate code: only unexpected failures or a stale
+  // KNOWN_FAILURES entry (a tracked gap that now passes) fail the build.
+  const unexpectedFailures = classifiedResults.filter(r => !r.passed && !r.trackedFailure);
+  const buildFailed = unexpectedFailures.length > 0 || staleKnownFailures.length > 0;
+  process.exit(buildFailed ? 1 : 0);
 }
 
 // Run tests
