@@ -65,19 +65,49 @@ describe('Fixed issues (regressions guarded — these assert CORRECT behavior)',
     });
   });
 
-  describe('SIDE-24: PSL-based suffix parsing for multi-label TLDs', () => {
-    test('dropping a mid-label (gov) from a multi-part legitimate domain is flagged as tldSubstitution', () => {
-      // "justica.gov.pt" -> "justica.pt" drops the "gov" label. Per the real
-      // PSL, "gov.pt" and "pt" are both registered public suffixes, so
-      // PSL-based parsing (public-suffix.js) correctly reads this as a suffix
-      // substitution ("gov.pt" -> "pt") with an identical name ("justica"),
-      // the same way "cgd.pt" -> "cgd.com" is.
-      const patterns = detectTyposquattingPatterns('justica.pt', 'justica.gov.pt');
-      assert.equal(patterns.tldSubstitution, true);
+describe('SIDE-24: PSL-based suffix parsing for multi-label TLDs', () => {
+  test('dropping a mid-label (gov) from a multi-part legitimate domain is flagged as tldSubstitution', () => {
+    // "justica.gov.pt" -> "justica.pt" drops the "gov" label. Per the real
+    // PSL, "gov.pt" and "pt" are both registered public suffixes, so
+    // PSL-based parsing (public-suffix.js) correctly reads this as a suffix
+    // substitution ("gov.pt" -> "pt") with an identical name ("justica"),
+    // the same way "cgd.pt" -> "cgd.com" is.
+    const patterns = detectTyposquattingPatterns('justica.pt', 'justica.gov.pt');
+    assert.equal(patterns.tldSubstitution, true);
 
-      const result = checkForTyposquatting('justica.pt');
-      assert.equal(result.suspicious, true);
-    });
+    const result = checkForTyposquatting('justica.pt');
+    assert.equal(result.suspicious, true);
+  });
+});
+
+describe('SIDE-25: label-boundary-aware embedding check (not raw substring)', () => {
+  test('a legitimate domain appearing only as a suffix of an unrelated label is not flagged', () => {
+    // "notcgd.pt.example.com" contains the literal substring "cgd.pt", but
+    // "cgd" there is a suffix of the unrelated label "notcgd", not a label of
+    // its own — domain.includes(legitimateDomain) used to misfire on this.
+    const patterns = detectTyposquattingPatterns('notcgd.pt.example.com', 'cgd.pt');
+    assert.equal(patterns.subdomainAbuse, false);
+
+    const result = checkForTyposquatting('notcgd.pt.example.com');
+    assert.equal(result.suspicious, false);
+  });
+
+  test('a legitimate domain embedded as real labels is still flagged as subdomain abuse', () => {
+    const patterns = detectTyposquattingPatterns('cgd.pt.evil.com', 'cgd.pt');
+    assert.equal(patterns.subdomainAbuse, true);
+  });
+});
+
+describe('SIDE-26: confusables-table-based homoglyph detection', () => {
+  test('a Cyrillic look-alike for a letter outside the old 16-letter map is detected', () => {
+    // Cyrillic 'г' (U+0433) renders as Latin 'r', which was never covered by
+    // the old hand-rolled HOMOGLYPH_MAP (only a/c/e/i/o/p/s/d/g/h/n/t/u/v/x/y
+    // had entries), so "kraken.com" spoofed via its 'r' used to slip through.
+    const patterns = detectTyposquattingPatterns('kгaken.com', 'kraken.com');
+    assert.equal(patterns.homoglyphAttack, true);
+
+    const result = checkForTyposquatting('kгaken.com');
+    assert.equal(result.suspicious, true);
   });
 
   describe('SIDE-25: label-boundary-aware embedding check (not raw substring)', () => {
